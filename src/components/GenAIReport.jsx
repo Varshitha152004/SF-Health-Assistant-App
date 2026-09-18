@@ -18,7 +18,7 @@ export default function GenAIReport({ module }) {
   const criticalCount = issueMetrics.filter(m => m.status === 'Critical').length;
   const atRiskCount = issueMetrics.filter(m => m.status === 'At Risk').length;
 
-  const executiveSummary = aiReport?.summary || 
+  const executiveSummary = aiReport?.summary ||
     `${module?.name || 'Module'} currently shows ${criticalCount} Critical and ${atRiskCount} At Risk metric variances against enterprise benchmark targets. Immediate governance and automated remediation steps are recommended to restore SLA compliance.`;
 
   return (
@@ -69,8 +69,8 @@ export default function GenAIReport({ module }) {
               const actions = metricRow.detailedAnalysis?.howToOvercome || [];
 
               return (
-                <div 
-                  key={idx} 
+                <div
+                  key={idx}
                   className={`diagnostic-accordion-card ${isCritical ? 'accordion-critical' : 'accordion-at-risk'} ${isExpanded ? 'is-open' : ''}`}
                 >
                   {/* Card Main Info */}
@@ -78,7 +78,6 @@ export default function GenAIReport({ module }) {
                     <div className="accordion-header-row">
                       <div className="accordion-header-left">
                         <h4 className="accordion-metric-title">{metricRow.metric}</h4>
-                        <span className="code-tag">{metricRow.category}</span>
                       </div>
 
                       <span className={`pill-badge ${isCritical ? 'badge-critical' : 'badge-at-risk'}`}>
@@ -87,19 +86,15 @@ export default function GenAIReport({ module }) {
                       </span>
                     </div>
 
-                    {/* Dedicated 'Where the Issue is Happening' Locus Description */}
+                    {/* Dedicated Process Locus Description */}
                     <div className="accordion-where-box">
-                      <div className="where-eyebrow">
-                        <span className="where-pin-icon" aria-hidden="true">📍</span>
-                        <span className="where-label-text">Where the issue is happening:</span>
-                      </div>
                       <p className="where-locus-desc">
                         {metricRow.detailedAnalysis?.whereItHappens || `${metricRow.category} processes within ${module?.name || 'the system'}.`}
                       </p>
                     </div>
 
                     {/* Dropdown Toggle: Why it is happening & Suggestions to improve */}
-                    <button 
+                    <button
                       type="button"
                       className={`accordion-dropdown-trigger ${isExpanded ? 'is-expanded' : ''}`}
                       onClick={() => toggleMetric(idx)}
@@ -122,7 +117,7 @@ export default function GenAIReport({ module }) {
                       {/* Sub-block 1: Why It is Happening (Root Cause) */}
                       <div className="accordion-sub-section">
                         <div className="sub-section-header">
-                          <span className="sub-section-icon">🔍</span>
+                          <span className="sub-section-icon" aria-hidden="true">🔍</span>
                           <h5 className="sub-section-title">Why It is Happening (Root Cause)</h5>
                         </div>
                         <p className="sub-section-text">
@@ -134,7 +129,7 @@ export default function GenAIReport({ module }) {
                       {actions.length > 0 && (
                         <div className="accordion-sub-section">
                           <div className="sub-section-header">
-                            <span className="sub-section-icon">💡</span>
+                            <span className="sub-section-icon" aria-hidden="true">💡</span>
                             <h5 className="sub-section-title">Suggestions to Improve</h5>
                           </div>
                           <ol className="accordion-suggestions-list">

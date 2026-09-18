@@ -20,23 +20,36 @@
   /* --------------------------------------------------------------------------
      2. Color Palette (Enterprise Modern Identity - Improvement 30)
      -------------------------------------------------------------------------- */
-  --header-bg: #091a2f;              /* Deep executive corporate navy */
-  --subribbon-bg: #0f2742;           /* Dark corporate sub-ribbon */
-  --bg-canvas: #f8fafc;              /* Crisp light soft-slate canvas */
-  --bg-surface: #ffffff;             /* Pure white surface */
-  --bg-surface-subtle: #f1f5f9;      /* Light neutral fill */
-  --bg-surface-hover: #f8fafc;       /* Gentle hover tint */
+  --header-bg: #091a2f;
+  /* Deep executive corporate navy */
+  --subribbon-bg: #0f2742;
+  /* Dark corporate sub-ribbon */
+  --bg-canvas: #f8fafc;
+  /* Crisp light soft-slate canvas */
+  --bg-surface: #ffffff;
+  /* Pure white surface */
+  --bg-surface-subtle: #f1f5f9;
+  /* Light neutral fill */
+  --bg-surface-hover: #f8fafc;
+  /* Gentle hover tint */
 
   /* Structural Borders & Rules */
-  --border-light: #e2e8f0;           /* Clean structural border */
-  --border-subtle: #f1f5f9;          /* Faint internal row divider */
-  --border-focus: #0284c7;           /* Active interaction border */
+  --border-light: #e2e8f0;
+  /* Clean structural border */
+  --border-subtle: #f1f5f9;
+  /* Faint internal row divider */
+  --border-focus: #0284c7;
+  /* Active interaction border */
 
   /* Typography Colors */
-  --text-dark: #0f172a;              /* Slate-black primary heading ink */
-  --text-body: #334155;              /* Balanced reading text */
-  --text-muted: #64748b;             /* Professional secondary metadata */
-  --text-light: #94a3b8;             /* Subtle tertiary captions */
+  --text-dark: #0f172a;
+  /* Slate-black primary heading ink */
+  --text-body: #334155;
+  /* Balanced reading text */
+  --text-muted: #64748b;
+  /* Professional secondary metadata */
+  --text-light: #94a3b8;
+  /* Subtle tertiary captions */
 
   /* Primary Interactive Brand Blue */
   --active-blue: #0284c7;
@@ -61,16 +74,20 @@
   --healthy-accent: #16a34a;
 
   /* Module Specific Brand Accents */
-  --color-ec: #0284c7;               /* Blue - Employee Central */
-  --color-rcm: #7c3aed;              /* Purple - Recruitment */
-  --color-onb: #16a34a;              /* Green - Onboarding */
-  --color-ofb: #ea580c;              /* Amber/Orange - Offboarding */
+  --color-ec: #0284c7;
+  /* Blue - Employee Central */
+  --color-rcm: #7c3aed;
+  /* Purple - Recruitment */
+  --color-onb: #16a34a;
+  /* Green - Onboarding */
+  --color-ofb: #ea580c;
+  /* Amber/Orange - Offboarding */
 
   /* --------------------------------------------------------------------------
      3. Typography & Geometry (Improvement 30)
      -------------------------------------------------------------------------- */
   --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  
+
   --radius-card: 10px;
   --radius-panel: 10px;
   --radius-modal: 12px;
@@ -93,7 +110,9 @@
 /* ==========================================================================
    Base Reset & Typography Standards
    ========================================================================== */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -267,8 +286,6 @@ body {
 
 .status-pulse-dot.dot-online {
   background-color: #10b981;
-  box-shadow: 0 0 6px #10b981;
-  animation: pulse-dot 2s infinite;
 }
 
 .status-pulse-dot.dot-standby {
@@ -276,9 +293,20 @@ body {
 }
 
 @keyframes pulse-dot {
-  0% { transform: scale(0.95); opacity: 0.85; }
-  50% { transform: scale(1.15); opacity: 1; }
-  100% { transform: scale(0.95); opacity: 0.85; }
+  0% {
+    transform: scale(0.95);
+    opacity: 0.85;
+  }
+
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.95);
+    opacity: 0.85;
+  }
 }
 
 .btn-connect-system {
@@ -555,15 +583,22 @@ body {
   height: 7px;
   border-radius: 50%;
   background-color: #10b981;
-  box-shadow: 0 0 8px #10b981;
-  animation: pulse-dot 2s infinite ease-in-out;
   display: inline-block;
   flex-shrink: 0;
 }
 
 @keyframes pulse-dot {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.35); opacity: 0.55; }
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.35);
+    opacity: 0.55;
+  }
 }
 
 .overview-main-title {
@@ -728,23 +763,23 @@ body {
   transform: scale(1.06);
 }
 
-.card-icon-ec { 
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); 
+.card-icon-ec {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   box-shadow: 0 4px 14px rgba(2, 132, 199, 0.32);
 }
 
-.card-icon-rcm { 
-  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); 
+.card-icon-rcm {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
   box-shadow: 0 4px 14px rgba(139, 92, 246, 0.32);
 }
 
-.card-icon-onb { 
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+.card-icon-onb {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.32);
 }
 
-.card-icon-ofb { 
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); 
+.card-icon-ofb {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   box-shadow: 0 4px 14px rgba(249, 115, 22, 0.32);
 }
 
@@ -853,8 +888,6 @@ body {
 
 .badge-critical .badge-dot {
   background-color: #ef4444;
-  box-shadow: 0 0 6px #ef4444;
-  animation: pulse-dot 2s infinite ease-in-out;
 }
 
 .badge-at-risk {
@@ -865,7 +898,6 @@ body {
 
 .badge-at-risk .badge-dot {
   background-color: #f59e0b;
-  box-shadow: 0 0 5px #f59e0b;
 }
 
 .badge-healthy {
@@ -876,7 +908,6 @@ body {
 
 .badge-healthy .badge-dot {
   background-color: #10b981;
-  box-shadow: 0 0 5px #10b981;
 }
 
 /* Metadata Category Tag (Improvement 08) */
@@ -940,19 +971,19 @@ body {
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
   border: 1px solid #bae6fd;
   border-left: 4px solid #0284c7;
-  padding: 16px 18px;
+  padding: 16px 20px;
   border-radius: 10px;
   margin-bottom: 22px;
   box-shadow: 0 2px 8px rgba(2, 132, 199, 0.06);
 }
 
 .callout-header-tag {
-  font-size: 0.70rem;
+  font-size: 0.72rem;
   font-weight: 750;
   letter-spacing: 0.06em;
   color: #0284c7;
   text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -963,10 +994,14 @@ body {
 }
 
 .callout-text {
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   color: #0c4a6e;
-  line-height: 1.6;
+  line-height: 1.65;
   font-weight: 500;
+  margin: 0;
+  text-wrap: pretty;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .ai-section-title-wrap {
@@ -982,7 +1017,7 @@ body {
   gap: 8px;
 }
 
-/* Standardized Section Number Badge (Improvement 14) */
+/* Standardized Section Number Badge */
 .section-index-num {
   font-size: 0.70rem;
   font-weight: 800;
@@ -1014,7 +1049,7 @@ body {
   letter-spacing: 0.01em;
 }
 
-/* Accordion Diagnostic Cards List (Improvements 09, 11) */
+/* Accordion Diagnostic Cards List */
 .ai-accordion-list {
   display: flex;
   flex-direction: column;
@@ -1023,15 +1058,19 @@ body {
 
 .diagnostic-accordion-card {
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 12px;
   background-color: #ffffff;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.02);
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.03);
   overflow: hidden;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .diagnostic-accordion-card:hover {
   transform: translateY(-2px);
+}
+
+.diagnostic-accordion-card:hover .accordion-metric-title {
+  color: #0284c7;
 }
 
 .diagnostic-accordion-card.accordion-critical:hover {
@@ -1062,7 +1101,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .accordion-header-left {
@@ -1079,14 +1118,16 @@ body {
   transition: color 0.18s;
 }
 
+.diag-locus-strip,
 .accordion-where-box {
-  background-color: #f8fafc;
-  border: 1px solid #edf2f7;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 10px 14px;
   margin-bottom: 12px;
 }
 
+.diag-locus-eyebrow,
 .where-eyebrow {
   display: flex;
   align-items: center;
@@ -1099,29 +1140,67 @@ body {
   margin-bottom: 4px;
 }
 
+.diag-locus-icon,
+.where-pin-icon {
+  font-size: 0.78rem;
+}
+
+.diag-locus-label,
+.where-label-text {
+  font-size: 0.68rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.diag-locus-desc,
 .where-locus-desc {
   font-size: 0.82rem;
   color: #334155;
   line-height: 1.5;
+  font-weight: 500;
 }
 
-/* Reduced Chevron Visual Weight & Smooth Rotation (Improvement 10) */
+/* Reduced Chevron Visual Weight & Smooth Rotation */
 .accordion-dropdown-trigger {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
-  padding: 8px 14px;
+  padding: 9px 14px;
   cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dropdown-trigger-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dropdown-trigger-icon {
+  font-size: 0.82rem;
+}
+
+.dropdown-step-count {
+  font-size: 0.66rem;
+  font-weight: 750;
+  color: #0284c7;
+  background: #e0f2fe;
+  padding: 2px 7px;
+  border-radius: 12px;
+  border: 1px solid #bae6fd;
 }
 
 .accordion-dropdown-trigger:hover {
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border-color: #7dd3fc;
+  border-color: #38bdf8;
   box-shadow: 0 3px 10px rgba(2, 132, 199, 0.12);
   transform: translateY(-1px);
 }
@@ -1137,7 +1216,7 @@ body {
 
 .accordion-dropdown-trigger.is-expanded {
   background: #f0f9ff;
-  border-color: #bae6fd;
+  border-color: #7dd3fc;
 }
 
 .accordion-dropdown-trigger.is-expanded .dropdown-trigger-label {
@@ -1172,73 +1251,134 @@ body {
 
 .accordion-body {
   border-top: 1px solid #e2e8f0;
-  background-color: #ffffff;
+  background-color: #f8fafc;
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   animation: fadeIn 0.18s ease;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
+.diag-subcard,
 .accordion-sub-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+  transition: all 0.2s ease;
 }
 
-.sub-section-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+/* Unified clean styling for Root Cause */
+.diag-why-card,
+.accordion-sub-section:first-child {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
 }
 
-.sub-section-icon {
-  font-size: 0.85rem;
-}
-
-.sub-section-title {
-  font-size: 0.82rem;
-  font-weight: 750;
+.accordion-sub-section:first-child .sub-section-title {
   color: #0f172a;
 }
 
-.sub-section-text {
-  font-size: 0.82rem;
+.accordion-sub-section:first-child .sub-section-text {
   color: #334155;
-  line-height: 1.55;
-  background: #f8fafc;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1px solid #edf2f7;
 }
 
+/* Unified clean styling for Suggestions */
+.diag-how-card,
+.accordion-sub-section:last-child {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.accordion-sub-section:last-child .sub-section-title {
+  color: #0f172a;
+}
+
+.diag-subcard-header,
+.sub-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.sub-section-icon {
+  font-size: 0.90rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sub-section-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+.diag-subcard-text,
+.sub-section-text {
+  font-size: 0.83rem;
+  color: #334155;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.diag-steps-flow,
 .accordion-suggestions-list {
-  list-style: none;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
+.diag-step-card,
 .accordion-suggestion-item {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  font-size: 0.82rem;
-  color: #334155;
-  line-height: 1.5;
+  gap: 11px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  padding: 10px 13px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all 0.18s ease;
 }
 
+.diag-step-card:hover,
+.accordion-suggestion-item:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.diag-step-badge,
 .accordion-step-counter {
-  font-size: 0.68rem;
-  font-weight: 750;
+  background: #ffffff;
   color: #0284c7;
-  background: #e0f2fe;
-  border: 1px solid #bae6fd;
+  border: 1.5px solid #cbd5e1;
+  font-size: 0.68rem;
+  font-weight: 700;
   width: 20px;
   height: 20px;
   border-radius: 50%;
@@ -1247,6 +1387,14 @@ body {
   justify-content: center;
   flex-shrink: 0;
   margin-top: 1px;
+}
+
+.diag-step-content,
+.accordion-step-text {
+  font-size: 0.82rem;
+  color: #1e293b;
+  line-height: 1.55;
+  font-weight: 500;
 }
 
 /* ==========================================================================
@@ -1452,9 +1600,17 @@ body {
   font-size: 0.80rem;
 }
 
-.variance-critical { color: var(--critical-accent); }
-.variance-at-risk { color: var(--at-risk-accent); }
-.variance-healthy { color: var(--healthy-accent); }
+.variance-critical {
+  color: var(--critical-accent);
+}
+
+.variance-at-risk {
+  color: var(--at-risk-accent);
+}
+
+.variance-healthy {
+  color: var(--healthy-accent);
+}
 
 /* Action Links (Improvement 27) */
 .metric-deepdive-tag {
@@ -1489,9 +1645,17 @@ body {
   font-size: 0.84rem;
 }
 
-.text-left { text-align: left; }
-.text-center { text-align: center; }
-.text-right { text-align: right; }
+.text-left {
+  text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
 
 /* ==========================================================================
    10. Modals Shared Structure (Improvements 19, 21, 24, 25, 26)
@@ -1525,6 +1689,7 @@ body {
     transform: scale(0.97) translateY(6px);
     opacity: 0;
   }
+
   to {
     transform: scale(1) translateY(0);
     opacity: 1;
@@ -1733,8 +1898,13 @@ body {
   margin: 0 16px;
 }
 
-.val-critical { color: #dc2626; }
-.val-at-risk { color: #d97706; }
+.val-critical {
+  color: #dc2626;
+}
+
+.val-at-risk {
+  color: #d97706;
+}
 
 /* Diagnostic Cards Inside Modal (Matches user's reference image) */
 .diagnostic-cards-container {
@@ -1981,8 +2151,6 @@ body {
 
 .status-indicator-dot.dot-live {
   background-color: #10b981;
-  box-shadow: 0 0 6px #10b981;
-  animation: pulse-dot 2s infinite;
 }
 
 .connection-status-sub {
@@ -2156,9 +2324,11 @@ select.form-control {
 .upload-modal-body::-webkit-scrollbar {
   width: 6px;
 }
+
 .upload-modal-body::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .upload-modal-body::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 3px;
@@ -2590,8 +2760,15 @@ select.form-control {
 }
 
 @keyframes toastSlideIn {
-  from { transform: translateX(30px) translateY(4px); opacity: 0; }
-  to { transform: translateX(0) translateY(0); opacity: 1; }
+  from {
+    transform: translateX(30px) translateY(4px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0) translateY(0);
+    opacity: 1;
+  }
 }
 
 .toast-icon-wrap {
@@ -2659,14 +2836,17 @@ select.form-control {
     grid-template-columns: 1fr;
     gap: 20px;
   }
+
   .module-cards-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
   }
+
   .swiss-kpi-strip {
     grid-template-columns: 1fr 1fr;
     gap: 16px;
   }
+
   .kpi-strip-divider {
     display: none;
   }
@@ -2676,26 +2856,32 @@ select.form-control {
   .content-viewport {
     padding: 20px 16px 48px 16px;
   }
+
   .dark-navbar,
   .dark-sub-ribbon {
     padding: 0 16px;
   }
+
   .module-cards-row {
     grid-template-columns: 1fr;
     gap: 14px;
   }
+
   .swiss-kpi-strip {
     grid-template-columns: 1fr;
     gap: 14px;
   }
+
   .form-row {
     flex-direction: column;
     gap: 12px;
   }
+
   .standards-toggle-wrapper {
     gap: 8px;
     padding: 3px 8px;
   }
+
   .standards-toggle-label {
     font-size: 0.70rem;
   }
