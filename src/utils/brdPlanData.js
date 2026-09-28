@@ -2,6 +2,29 @@
 // including required manpower, hours, phases, milestones, deliverables, and governance.
 
 export const METRIC_BRD_PLANS = {
+  'Access & Asset Revocation Timeliness': {
+    workforceRequired: [
+      { role: 'SAP BTP Event Mesh / Cloud Integration Architect', count: 1, hours: '40 Person-Hours', focus: 'Real-time webhook triggers via Event Mesh' },
+      { role: 'Enterprise IAM & IT Security Engineer', count: 1, hours: '30 Person-Hours', focus: 'Active Directory and Okta credential de-provisioning' },
+      { role: 'IT Audit & Compliance Officer', count: 1, hours: '15 Person-Hours', focus: 'SOC-2 / ISO-27001 audit validation & verification' }
+    ],
+    totalManpower: '3 Specialists (85 Person-Hours)',
+    timeline: '2 Weeks',
+    sprintCycle: 'Sprint Cycle 1',
+    totalEffortHours: 85,
+    governanceLead: 'Enterprise IT Security & Identity Governance Committee',
+    expectedOutcome: 'Cut revocation time from 4.2 hours to ≤1.0 hour, eliminating corporate security vulnerabilities and ensuring 100% SOC-2 compliance.',
+    milestones: [
+      { phase: 'Sprint 1 (Week 1)', title: 'Architecture Review & Webhook Trigger Setup', deliverable: 'SAP BTP Event Mesh Specification' },
+      { phase: 'Sprint 1 (Week 2)', title: 'IAM Active Directory / Okta SSO Cutover', deliverable: 'Automated Session Kill & Audit Logging' }
+    ],
+    deliverables: [
+      'Approved IAM De-provisioning Architecture & BRD Spec',
+      'SAP BTP Event Mesh Real-Time Webhook Pipeline',
+      'Automated Audit Timestamp Verification Dashboard',
+      'SOC-2 / ISO-27001 Access Revocation Compliance Sign-Off'
+    ]
+  },
   'Biographical & Personal Data Accuracy Rate': {
     workforceRequired: [
       { role: 'SAP SF Employee Central Functional Consultant', count: 2, hours: '60 Person-Hours', focus: 'Picklist validation & business rules configuration' },

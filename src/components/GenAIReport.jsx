@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 
-export default function GenAIReport({ module }) {
-  const { aiReport, benchmarks = [] } = module || {};
+export default function GenAIReport({ module, onSelectMetric }) {
+  const { benchmarks = [] } = module || {};
 
-  // Filter ONLY Critical and At Risk metrics as explicitly mandated
+  // Filter Critical and At Risk metrics for the Issues Identified list
   const issueMetrics = benchmarks.filter(
     (b) => (b.status === 'Critical' || b.status === 'At Risk') && b.detailedAnalysis
   );
@@ -15,144 +15,131 @@ export default function GenAIReport({ module }) {
     setExpandedIndex(expandedIndex === idx ? null : idx);
   };
 
-  const criticalCount = issueMetrics.filter(m => m.status === 'Critical').length;
-  const atRiskCount = issueMetrics.filter(m => m.status === 'At Risk').length;
-
-  const executiveSummary = aiReport?.summary ||
-    `${module?.name || 'Module'} currently shows ${criticalCount} Critical and ${atRiskCount} At Risk metric variances against enterprise benchmark targets. Immediate governance and automated remediation steps are recommended to restore SLA compliance.`;
-
   return (
-    <div className="white-panel ai-diagnostic-panel">
-      {/* Panel Header */}
-      <div className="ai-report-header">
-        <span className="swiss-panel-eyebrow">
-          <span className="ai-sparkle-icon" aria-hidden="true">✨</span>
-          <span>Diagnostic Analysis • AI Insights</span>
-        </span>
-        <h2 className="panel-main-title">AI Diagnostic Report</h2>
-      </div>
-
-      {/* Executive Summary Callout */}
-      <div className="ai-summary-callout">
-        <div className="callout-header-tag">
-          <span className="callout-icon">💡</span>
-          <span>Executive Summary • {criticalCount} Critical, {atRiskCount} At Risk</span>
+    <div className="issues-identified-container">
+      {/* Header with Title and Active Variances badge */}
+      <div className="issues-column-header">
+        <div className="issues-header-left">
+          <div className="issues-header-icon-wrap" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+          </div>
+          <h2 className="issues-column-title">Issues Identified</h2>
         </div>
-        <p className="callout-text">{executiveSummary}</p>
+
+        <div className="variances-pill-badge">
+          {issueMetrics.length} Active Variances
+        </div>
       </div>
 
+      {/* List of Issue Cards */}
       {issueMetrics.length === 0 ? (
         <div className="healthy-state-report-callout">
           <div className="healthy-icon-pill">✓</div>
           <div>
             <h4 className="healthy-title">All Module Benchmarks Healthy</h4>
             <p className="healthy-desc">
-              Every tracked metric in this module is operating within established SLA parameters. No active SLA breaches or degradation risks detected.
+              Every tracked metric in this module is operating within established SLA parameters. No active variances detected.
             </p>
           </div>
         </div>
       ) : (
-        <>
-          {/* Section Header: Where the Issue is Happening with Expandable Accordion Tiles */}
-          <div className="ai-section-title-wrap">
-            <h3 className="ai-section-numbered-title">
-              <span className="section-index-num">01</span>
-              <span>Where the Issue is Happening ({issueMetrics.length} Active Variances)</span>
-            </h3>
-          </div>
+        <div className="issue-cards-stack">
+          {issueMetrics.map((metricRow, idx) => {
+            const isCritical = metricRow.status === 'Critical';
+            const isExpanded = expandedIndex === idx;
+            const actions = metricRow.detailedAnalysis?.howToOvercome || [];
+            const cardNumber = String(idx + 1).padStart(2, '0');
 
-          {/* Expandable Diagnostic Accordion Cards */}
-          <div className="ai-accordion-list" role="region" aria-label="Diagnostic Issue Details">
-            {issueMetrics.map((metricRow, idx) => {
-              const isCritical = metricRow.status === 'Critical';
-              const isExpanded = expandedIndex === idx;
-              const actions = metricRow.detailedAnalysis?.howToOvercome || [];
+            return (
+              <div
+                key={idx}
+                className={`issue-item-card ${isCritical ? 'issue-card-critical' : 'issue-card-at-risk'} ${isExpanded ? 'is-expanded' : ''}`}
+              >
+                {/* Main Card Header & Description Area */}
+                <div className="issue-card-top-layout">
+                  {/* Left Column: Number badge */}
+                  <div className="issue-card-left-badge-col">
+                    <div className={`issue-number-badge ${isCritical ? 'badge-num-critical' : 'badge-num-at-risk'}`}>
+                      {cardNumber}
+                    </div>
+                  </div>
 
-              return (
-                <div
-                  key={idx}
-                  className={`diagnostic-accordion-card ${isCritical ? 'accordion-critical' : 'accordion-at-risk'} ${isExpanded ? 'is-open' : ''}`}
-                >
-                  {/* Card Main Info */}
-                  <div className="accordion-main-card">
-                    <div className="accordion-header-row">
-                      <div className="accordion-header-left">
-                        <h4 className="accordion-metric-title">{metricRow.metric}</h4>
-                      </div>
-
+                  {/* Right Column: Title, Badge, Description */}
+                  <div className="issue-card-main-col">
+                    <div className="issue-card-title-row">
+                      <h3 className="issue-metric-name">{metricRow.metric}</h3>
                       <span className={`pill-badge ${isCritical ? 'badge-critical' : 'badge-at-risk'}`}>
-                        <span className="badge-dot" aria-hidden="true"></span>
                         <span>{metricRow.status}</span>
                       </span>
                     </div>
 
-                    {/* Dedicated Process Locus Description */}
-                    <div className="accordion-where-box">
-                      <p className="where-locus-desc">
-                        {metricRow.detailedAnalysis?.whereItHappens || `${metricRow.category} processes within ${module?.name || 'the system'}.`}
+                    <p className="issue-locus-desc">
+                      {metricRow.detailedAnalysis?.whereItHappens || `${metricRow.category} processes within SuccessFactors.`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Bottom Full-Width Expandable Action Bar */}
+                <button
+                  type="button"
+                  className={`issue-expand-bar-btn ${isExpanded ? 'is-open' : ''}`}
+                  onClick={() => toggleMetric(idx)}
+                  aria-expanded={isExpanded}
+                >
+                  <span className="expand-bar-text">
+                    {isExpanded ? 'Why it is happening & Suggestions to improve' : 'Why it is happening & Suggestions to improve'}
+                  </span>
+                  <span className={`expand-chevron-icon ${isExpanded ? 'chevron-rotated' : ''}`} aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </span>
+                </button>
+
+                {/* Smooth Expandable Body: Root Cause & Suggestions */}
+                {isExpanded && (
+                  <div className="issue-expanded-drawer">
+                    {/* Root Cause Section */}
+                    <div className="drawer-subcard drawer-why-section">
+                      <div className="drawer-subcard-header">
+                        <span className="drawer-icon" aria-hidden="true">🔍</span>
+                        <h4 className="drawer-subcard-title">Why It is Happening (Root Cause)</h4>
+                      </div>
+                      <p className="drawer-subcard-text">
+                        {metricRow.detailedAnalysis?.whyItHappens}
                       </p>
                     </div>
 
-                    {/* Dropdown Toggle: Why it is happening & Suggestions to improve */}
-                    <button
-                      type="button"
-                      className={`accordion-dropdown-trigger ${isExpanded ? 'is-expanded' : ''}`}
-                      onClick={() => toggleMetric(idx)}
-                      aria-expanded={isExpanded}
-                    >
-                      <span className="dropdown-trigger-label">
-                        {isExpanded ? 'Hide Root Cause & Suggestions' : 'Why it is happening & Suggestions to improve'}
-                      </span>
-                      <span className={`accordion-chevron-box ${isExpanded ? 'rotated' : ''}`} aria-hidden="true">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      </span>
-                    </button>
-                  </div>
-
-                  {/* Dropdown Body: Revealed on Down Arrow Click */}
-                  {isExpanded && (
-                    <div className="accordion-body">
-                      {/* Sub-block 1: Why It is Happening (Root Cause) */}
-                      <div className="accordion-sub-section">
-                        <div className="sub-section-header">
-                          <span className="sub-section-icon" aria-hidden="true">🔍</span>
-                          <h5 className="sub-section-title">Why It is Happening (Root Cause)</h5>
+                    {/* Suggestions Section */}
+                    {actions.length > 0 && (
+                      <div className="drawer-subcard drawer-how-section">
+                        <div className="drawer-subcard-header">
+                          <span className="drawer-icon" aria-hidden="true">💡</span>
+                          <h4 className="drawer-subcard-title">Suggestions to Improve</h4>
                         </div>
-                        <p className="sub-section-text">
-                          {metricRow.detailedAnalysis?.whyItHappens}
-                        </p>
+                        <ul className="drawer-suggestions-list">
+                          {actions.map((action, aIdx) => (
+                            <li key={aIdx} className="drawer-suggestion-item">
+                              <span className="drawer-step-num">{aIdx + 1}</span>
+                              <span className="drawer-step-text">{action}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-
-                      {/* Sub-block 2: Suggestions to Improve */}
-                      {actions.length > 0 && (
-                        <div className="accordion-sub-section">
-                          <div className="sub-section-header">
-                            <span className="sub-section-icon" aria-hidden="true">💡</span>
-                            <h5 className="sub-section-title">Suggestions to Improve</h5>
-                          </div>
-                          <ol className="accordion-suggestions-list">
-                            {actions.map((action, aIdx) => (
-                              <li key={aIdx} className="accordion-suggestion-item">
-                                <span className="accordion-step-counter">{aIdx + 1}</span>
-                                <span className="accordion-step-text">{action}</span>
-                              </li>
-                            ))}
-                          </ol>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
 }
-
-
-

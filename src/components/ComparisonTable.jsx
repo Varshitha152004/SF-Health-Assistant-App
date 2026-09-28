@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
 
-export default function ComparisonTable({ 
-  module, 
-  standardMode = 'standard', 
-  onSelectMetric, 
-  customStandardsMap = {} 
+export default function ComparisonTable({
+  module,
+  standardMode = 'standard',
+  onSelectMetric,
+  customStandardsMap = {}
 }) {
-  const { benchmarks } = module;
+  const { benchmarks = [] } = module || {};
   const [filterMode, setFilterMode] = useState('all'); // 'all' | 'critical' | 'at-risk' | 'healthy'
 
   const isCustom = standardMode === 'custom';
 
-  const filteredBenchmarks = benchmarks.filter(row => {
+  const criticalBenchmarks = benchmarks.filter((b) => b.status === 'Critical');
+  const atRiskBenchmarks = benchmarks.filter((b) => b.status === 'At Risk');
+  const healthyBenchmarks = benchmarks.filter((b) => b.status === 'Healthy');
+
+  const criticalCount = criticalBenchmarks.length;
+  const atRiskCount = atRiskBenchmarks.length;
+  const healthyCount = healthyBenchmarks.length;
+
+  // Filtered rows for table display
+  const displayRows = benchmarks.filter((row) => {
     if (filterMode === 'critical') return row.status === 'Critical';
     if (filterMode === 'at-risk') return row.status === 'At Risk';
     if (filterMode === 'healthy') return row.status === 'Healthy';
@@ -19,52 +28,66 @@ export default function ComparisonTable({
   });
 
   const getBadgeClass = (status) => {
-    if (status === 'Critical') return 'badge-critical';
-    if (status === 'At Risk') return 'badge-at-risk';
-    if (status === 'Healthy') return 'badge-healthy';
+    const s = String(status || '').trim().toLowerCase();
+    if (s === 'critical') return 'badge-critical';
+    if (s === 'at risk' || s === 'at-risk' || s === 'risk') return 'badge-at-risk';
+    if (s === 'healthy') return 'badge-healthy';
     return 'badge-at-risk';
   };
 
-  const criticalCount = benchmarks.filter(b => b.status === 'Critical').length;
-  const atRiskCount = benchmarks.filter(b => b.status === 'At Risk').length;
-  const healthyCount = benchmarks.filter(b => b.status === 'Healthy').length;
+  const getVarianceClass = (status) => {
+    const s = String(status || '').trim().toLowerCase();
+    if (s === 'critical') return 'variance-critical';
+    if (s === 'at risk' || s === 'at-risk' || s === 'risk') return 'variance-at-risk';
+    if (s === 'healthy') return 'variance-healthy';
+    return 'variance-at-risk';
+  };
 
   return (
-    <div className="white-panel comparison-panel">
-      {/* Header with Title and Filter Buttons */}
-      <div className="comparison-header">
-        <div className="comparison-title-wrap">
-          <span className="swiss-panel-eyebrow">Benchmark Standards • SLA Tracking</span>
-          <h2 className="panel-main-title">
+    <div className="comparison-card-panel">
+      {/* Header with Title and Filter Pills */}
+      <div className="comparison-card-header">
+        <div className="comparison-card-title-group">
+          <div className="comparison-scale-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18" />
+              <path d="M12 3v18" />
+              <path d="m19 6 3 6a3 3 0 0 1-6 0l3-6" />
+              <path d="m5 6 3 6a3 3 0 0 1-6 0l3-6" />
+              <path d="M8 21h8" />
+            </svg>
+          </div>
+          <h2 className="comparison-card-title">
             {isCustom ? 'Company vs. Custom Standards' : 'Company vs. Industry Standards'}
           </h2>
         </div>
 
-        <div className="pill-filter-group" role="tablist" aria-label="Filter Metrics">
-          <button 
-            type="button" 
-            className={`pill-filter-btn ${filterMode === 'all' ? 'active' : ''}`}
+        {/* Filter Pills */}
+        <div className="comparison-filter-pills" role="tablist" aria-label="Filter Metrics">
+          <button
+            type="button"
+            className={`comp-filter-pill ${filterMode === 'all' ? 'is-active' : ''}`}
             onClick={() => setFilterMode('all')}
           >
             All ({benchmarks.length})
           </button>
-          <button 
-            type="button" 
-            className={`pill-filter-btn filter-btn-critical ${filterMode === 'critical' ? 'active' : ''}`}
+          <button
+            type="button"
+            className={`comp-filter-pill pill-critical ${filterMode === 'critical' ? 'is-active' : ''}`}
             onClick={() => setFilterMode('critical')}
           >
             Critical ({criticalCount})
           </button>
-          <button 
-            type="button" 
-            className={`pill-filter-btn filter-btn-at-risk ${filterMode === 'at-risk' ? 'active' : ''}`}
+          <button
+            type="button"
+            className={`comp-filter-pill pill-at-risk ${filterMode === 'at-risk' ? 'is-active' : ''}`}
             onClick={() => setFilterMode('at-risk')}
           >
             At Risk ({atRiskCount})
           </button>
-          <button 
-            type="button" 
-            className={`pill-filter-btn filter-btn-healthy ${filterMode === 'healthy' ? 'active' : ''}`}
+          <button
+            type="button"
+            className={`comp-filter-pill pill-healthy ${filterMode === 'healthy' ? 'is-active' : ''}`}
             onClick={() => setFilterMode('healthy')}
           >
             Healthy ({healthyCount})
@@ -72,98 +95,102 @@ export default function ComparisonTable({
         </div>
       </div>
 
-      {/* Comparison Table */}
-      <div className="clean-table-container">
-        <table className="clean-benchmark-table">
+      {/* Benchmark Comparison Table */}
+      <div className="enterprise-table-container">
+        <table className="enterprise-benchmark-table">
           <thead>
             <tr>
-              <th scope="col" className="th-metric">Metric Name</th>
-              <th scope="col" className="th-company text-left">Our Company</th>
-              <th scope="col" className="th-standard text-left">
-                {isCustom ? 'Custom Standard' : 'Industry Standard'}
+              <th scope="col" className="col-metric-name">METRIC NAME</th>
+              <th scope="col" className="col-company">OUR COMPANY</th>
+              <th scope="col" className="col-standard">
+                {isCustom ? 'CUSTOM STANDARD' : 'INDUSTRY STANDARD'}
               </th>
-              <th scope="col" className="th-status text-center">Health Status</th>
-              <th scope="col" className="th-variance text-right">Variance</th>
-              <th scope="col" className="th-action text-right">Analysis</th>
+              <th scope="col" className="col-status text-center">HEALTH STATUS</th>
+              <th scope="col" className="col-variance text-center">VARIANCE</th>
+              <th scope="col" className="col-analysis text-right">ANALYSIS</th>
             </tr>
           </thead>
           <tbody>
-            {filteredBenchmarks.length === 0 ? (
+            {displayRows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="no-data-msg">
+                <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
                   No metrics match the selected filter.
                 </td>
               </tr>
             ) : (
-              filteredBenchmarks.map((row, idx) => {
-                const hasDetailedAnalysis = (row.status === 'Critical' || row.status === 'At Risk') && row.detailedAnalysis;
+              displayRows.map((row, idx) => {
                 const customStdVal = customStandardsMap[row.metric.toLowerCase().trim()];
                 const displayStandard = (isCustom && customStdVal) ? customStdVal : row.standard;
 
+                const isHealthy = String(row.status || '').trim().toLowerCase() === 'healthy';
+
                 return (
-                  <tr 
+                  <tr
                     key={idx}
-                    className={hasDetailedAnalysis ? 'clickable-metric-row' : 'static-metric-row'}
-                    onClick={() => {
-                      if (hasDetailedAnalysis && onSelectMetric) {
-                        onSelectMetric(row);
-                      }
-                    }}
+                    className={`benchmark-data-row ${isHealthy ? 'row-healthy' : 'row-actionable'}`}
+                    onClick={isHealthy ? undefined : () => onSelectMetric && onSelectMetric(row)}
+                    role={isHealthy ? undefined : 'button'}
+                    tabIndex={isHealthy ? undefined : 0}
                     onKeyDown={(e) => {
-                      if (hasDetailedAnalysis && onSelectMetric && (e.key === 'Enter' || e.key === ' ')) {
+                      if (!isHealthy && (e.key === 'Enter' || e.key === ' ')) {
                         e.preventDefault();
-                        onSelectMetric(row);
+                        onSelectMetric && onSelectMetric(row);
                       }
                     }}
-                    tabIndex={hasDetailedAnalysis ? 0 : undefined}
-                    role={hasDetailedAnalysis ? 'button' : undefined}
-                    aria-label={hasDetailedAnalysis ? `View detailed analysis for ${row.metric}` : undefined}
+                    title={isHealthy ? undefined : `Click to open Deep Dive Diagnostic Plan for ${row.metric}`}
                   >
-                    {/* METRIC */}
-                    <td className="td-metric">
-                      <div className="metric-primary-name">{row.metric}</div>
-                      <div className="metric-category-subtext">{row.category}</div>
-                    </td>
-
-                    {/* OUR COMPANY */}
-                    <td className="td-company">
-                      <span className="bold-company-val">{row.company}</span>
-                    </td>
-
-                    {/* INDUSTRY / CUSTOM STANDARD */}
-                    <td className="td-standard">
-                      <div className="standard-cell-wrap">
-                        <span className="standard-val">{displayStandard}</span>
-                        {isCustom && customStdVal && (
-                          <span className="custom-indicator-chip" title="Imported Custom Standard">Custom</span>
-                        )}
+                    {/* Metric Name: Clean, premium typography without lock/icon boxes */}
+                    <td className="cell-metric-name">
+                      <div className="metric-text-group">
+                        <span className="metric-name-title">{row.metric}</span>
+                        <span className="metric-category-tag">{row.category}</span>
                       </div>
                     </td>
 
+                    {/* Our Company */}
+                    <td className="cell-company">
+                      <span className="company-metric-value">{row.company}</span>
+                    </td>
 
-                    {/* HEALTHY STATE */}
-                    <td className="td-status text-center">
+                    {/* Industry / Custom Standard */}
+                    <td className="cell-standard">
+                      <span className="standard-metric-value">{displayStandard}</span>
+                    </td>
+
+                    {/* Health Status */}
+                    <td className="cell-status text-center">
                       <span className={`pill-badge ${getBadgeClass(row.status)}`}>
-                        <span className="badge-dot" aria-hidden="true"></span>
                         <span>{row.status}</span>
                       </span>
                     </td>
 
-                    {/* VARIANCE */}
-                    <td className="td-variance text-right">
-                      <span className={`variance-tag variance-${row.status.toLowerCase().replace(/\s+/g, '-')}`}>
+                    {/* Variance */}
+                    <td className="cell-variance text-center">
+                      <span className={`variance-tag ${getVarianceClass(row.status)}`}>
                         {row.variance}
                       </span>
                     </td>
 
-                    {/* ACTION / DEEP DIVE */}
-                    <td className="td-action text-right">
-                      {hasDetailedAnalysis ? (
-                        <span className="metric-deepdive-tag">
-                          Deep Dive <span className="deepdive-arrow">→</span>
+                    {/* Analysis Action: Only Critical and At Risk show Deep Dive; Healthy shows On Target */}
+                    <td className="cell-analysis text-right">
+                      {isHealthy ? (
+                        <span className="metric-on-target-tag">
+                          <span className="on-target-check">✓</span>
+                          <span>On Target</span>
                         </span>
                       ) : (
-                        <span className="metric-on-target-tag">On Target</span>
+                        <button
+                          type="button"
+                          className="btn-deep-dive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectMetric && onSelectMetric(row);
+                          }}
+                          title={`Deep Dive into ${row.metric}`}
+                        >
+                          <span>Deep Dive</span>
+                          <span className="deep-dive-arrow">→</span>
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -176,4 +203,3 @@ export default function ComparisonTable({
     </div>
   );
 }
-

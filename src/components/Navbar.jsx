@@ -19,7 +19,7 @@ export default function Navbar({ onGoHome, onOpenConnectSystem, isConnected }) {
         {/* Right: Connect System Option */}
         <div className="navbar-right">
           {isConnected && (
-            <div 
+            <div
               className="navbar-telemetry-pill"
               title="Live Telemetry: Connected to SAP SuccessFactors via OData v2 API"
             >

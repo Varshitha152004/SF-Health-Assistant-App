@@ -8,39 +8,47 @@ export default function ModuleRibbon({
   standardMode = 'standard',
   onSelectStandardMode,
   onOpenUploadModal,
-  hasCustomStandards = false
+  hasCustomStandards = false,
+  onShowWarning
 }) {
   const [isShaking, setIsShaking] = useState(false);
   const activeModule = modules.find(m => m.id === activeModuleId);
 
   const triggerShake = () => {
     setIsShaking(true);
-    setTimeout(() => setIsShaking(false), 450);
+    setTimeout(() => setIsShaking(false), 500);
   };
 
-  const handleToggleClick = () => {
+  const handleToggleClick = (e) => {
+    e?.stopPropagation?.();
     if (standardMode === 'standard') {
       if (!hasCustomStandards) {
         triggerShake();
-        onSelectStandardMode('custom');
-      } else {
-        onSelectStandardMode('custom');
+        if (onShowWarning) {
+          onShowWarning('File must be uploaded and validated before Custom Standards can be activated. Please upload your standards document first.');
+        }
+        return;
       }
+      onSelectStandardMode('custom');
     } else {
       onSelectStandardMode('standard');
     }
   };
 
-  const handleCustomClick = () => {
+  const handleCustomClick = (e) => {
+    e?.stopPropagation?.();
     if (!hasCustomStandards) {
       triggerShake();
-      onSelectStandardMode('custom');
-    } else {
-      onSelectStandardMode('custom');
+      if (onShowWarning) {
+        onShowWarning('File must be uploaded and validated before Custom Standards can be activated. Please upload your standards document first.');
+      }
+      return;
     }
+    onSelectStandardMode('custom');
   };
 
-  const handleIndustrialClick = () => {
+  const handleIndustrialClick = (e) => {
+    e?.stopPropagation?.();
     onSelectStandardMode('standard');
   };
 
@@ -90,13 +98,13 @@ export default function ModuleRibbon({
             </div>
           )}
 
-          {/* Upload Custom Standards Trigger */}
+          {/* Upload / Update Custom Standards Trigger */}
           <button
             type="button"
             className="btn-ribbon-upload"
             onClick={onOpenUploadModal}
-            title="Upload Custom Standards CSV"
-            aria-label="Upload Custom Standards CSV"
+            title={hasCustomStandards ? "Update Custom Standards CSV" : "Upload Custom Standards CSV"}
+            aria-label={hasCustomStandards ? "Update Custom Standards CSV" : "Upload Custom Standards CSV"}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -107,13 +115,23 @@ export default function ModuleRibbon({
           </button>
 
           {/* External Labels: Industrial Standards & Custom Standards with Toggle Switch */}
-          <div className="standards-toggle-wrapper" aria-label="Standards Selector">
+          <div
+            className="standards-toggle-wrapper"
+            aria-label="Standards Selector"
+            onClick={handleToggleClick}
+            style={{ cursor: 'pointer' }}
+          >
             <span
               className={`standards-toggle-label ${standardMode === 'standard' ? 'active' : ''}`}
               onClick={handleIndustrialClick}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && handleIndustrialClick()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.stopPropagation();
+                  handleIndustrialClick(e);
+                }
+              }}
               title="Industrial Standards"
             >
               Industrial Standards
@@ -121,22 +139,27 @@ export default function ModuleRibbon({
 
             <button
               type="button"
-              className={`standards-switch-btn ${standardMode === 'custom' ? 'checked' : ''} ${isShaking ? 'shake-anim' : ''}`}
+              className={`standards-switch-btn ${standardMode === 'custom' ? 'checked' : ''} ${!hasCustomStandards ? 'is-locked' : ''} ${isShaking ? 'shake-anim' : ''}`}
               onClick={handleToggleClick}
               role="switch"
               aria-checked={standardMode === 'custom'}
-              title="Toggle standards mode"
+              title={hasCustomStandards ? "Toggle between Industrial and Custom Standards" : "Upload Custom Standards document to enable Custom mode"}
               aria-label="Toggle between Industrial Standards and Custom Standards"
             >
               <span className="standards-switch-thumb"></span>
             </button>
 
             <span
-              className={`standards-toggle-label ${standardMode === 'custom' ? 'active' : ''}`}
+              className={`standards-toggle-label ${standardMode === 'custom' ? 'active' : ''} ${!hasCustomStandards ? 'is-locked' : ''}`}
               onClick={handleCustomClick}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && handleCustomClick()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.stopPropagation();
+                  handleCustomClick(e);
+                }
+              }}
               title={hasCustomStandards ? 'Custom Standards Active' : 'Custom Standards (Upload required)'}
             >
               Custom Standards
