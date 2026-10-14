@@ -1,419 +1,763 @@
-// PDF Generator for SAP SuccessFactors Enterprise Health Diagnostic
-// Generates a valid PDF 1.4 Business Requirements Document (BRD) Action Plan
+/**
+ * Enterprise BRD PDF Generator for SAP SuccessFactors Diagnostic Intelligence
+ * Exports the complete 8-Section Business Requirements Document (BRD) Plan of Action
+ * directly as a downloaded PDF file into the user's browser Downloads.
+ */
 
-import { getBrdPlan } from './brdPlanData';
+// Helper to load html2pdf.js dynamically if not already present
+function loadHtml2Pdf() {
+  if (typeof window !== 'undefined' && window.html2pdf) {
+    return Promise.resolve(window.html2pdf);
+  }
 
-function escapePdf(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/\\/g, '\\\\')
-    .replace(/\(/g, '\\(')
-    .replace(/\)/g, '\\)')
-    .replace(/[^\x20-\x7E]/g, (ch) => {
-      if (ch === '—' || ch === '–') return '--';
-      if (ch === '≤') return '<=';
-      if (ch === '≥') return '>=';
-      if (ch === '•') return '*';
-      if (ch === '“' || ch === '”') return '"';
-      if (ch === '‘' || ch === '’') return "'";
-      if (ch === '…') return '...';
-      return ' ';
-    });
+  return new Promise((resolve, reject) => {
+    if (typeof window !== 'undefined' && window.html2pdf) {
+      return resolve(window.html2pdf);
+    }
+
+    const cdnUrls = [
+      'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
+      'https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js',
+      'https://unpkg.com/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js'
+    ];
+
+    let currentIdx = 0;
+
+    function tryNext() {
+      if (typeof window !== 'undefined' && window.html2pdf) {
+        return resolve(window.html2pdf);
+      }
+      if (currentIdx >= cdnUrls.length) {
+        return reject(new Error('Failed to load html2pdf from CDNs'));
+      }
+
+      const script = document.createElement('script');
+      script.src = cdnUrls[currentIdx++];
+      script.async = true;
+      script.onload = () => {
+        if (typeof window !== 'undefined' && window.html2pdf) {
+          resolve(window.html2pdf);
+        } else {
+          tryNext();
+        }
+      };
+      script.onerror = () => tryNext();
+      document.head.appendChild(script);
+    }
+
+    // Quick poll for existing script tag in case it is already finishing
+    let elapsed = 0;
+    const interval = setInterval(() => {
+      elapsed += 50;
+      if (typeof window !== 'undefined' && window.html2pdf) {
+        clearInterval(interval);
+        return resolve(window.html2pdf);
+      }
+      if (elapsed >= 800) {
+        clearInterval(interval);
+        tryNext();
+      }
+    }, 50);
+  });
 }
 
-function wordWrap(text, maxChars = 85) {
-  if (!text) return [];
-  const words = text.split(' ');
-  const lines = [];
-  let curLine = '';
-
-  for (const word of words) {
-    if ((curLine + (curLine ? ' ' : '') + word).length <= maxChars) {
-      curLine += (curLine ? ' ' : '') + word;
-    } else {
-      if (curLine) lines.push(curLine);
-      curLine = word;
-    }
-  }
-  if (curLine) lines.push(curLine);
-  return lines;
-}
-
-export function generateMetricBrdPdf(metric) {
-  if (!metric) return;
-  const brd = getBrdPlan(metric);
-  const detailedAnalysis = metric.detailedAnalysis || {};
-
-  const metricName = metric.metric || metric.name || 'Metric_Analysis';
-  const category = metric.category || 'Core HR';
-  const company = metric.company || 'N/A';
-  const standard = metric.standard || 'N/A';
-  const variance = metric.variance || 'N/A';
-  const status = metric.status || 'At Risk';
-  const isCritical = status === 'Critical';
-
-  // Coordinate helper: A4 is 595.28 x 841.89 pt
-  const H = 841.89;
-  const py = (topY) => (H - topY).toFixed(2);
-
-  // ---------------- Page 1 Stream ----------------
-  let p1 = [];
-  
-  // Header background banner (dark navy #0b1a2d)
-  p1.push(`0.043 0.102 0.176 rg`);
-  p1.push(`0 ${py(75)} 595.28 75 re f`);
-
-  // Header Title & Logo Accent
-  p1.push(`0.22 0.74 0.97 rg`); // Cyan accent
-  p1.push(`40 ${py(32)} 12 12 re f`);
-  p1.push(`1 1 1 rg`); // White
-  p1.push(`BT /F2 14 Tf 58 ${py(32)} Td (SAP SuccessFactors -- Enterprise Health Diagnostic) Tj ET`);
-  p1.push(`0.58 0.65 0.74 rg`); // Muted slate
-  p1.push(`BT /F1 8.5 Tf 40 ${py(52)} Td (BUSINESS REQUIREMENTS DOCUMENT (BRD) & ACTION PLAN // CONFIDENTIAL) Tj ET`);
-
-  // Date and Status badge on right
-  const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  p1.push(`1 1 1 rg`);
-  p1.push(`BT /F1 8.5 Tf 460 ${py(52)} Td (Generated: ${escapePdf(dateStr)}) Tj ET`);
-
-  // Status Indicator Box
-  if (isCritical) {
-    p1.push(`0.99 0.93 0.93 rg`); // light red bg
-    p1.push(`470 ${py(36)} 85 20 re f`);
-    p1.push(`0.86 0.15 0.15 RG 1 w 470 ${py(36)} 85 20 re S`);
-    p1.push(`0.75 0.05 0.05 rg`);
-    p1.push(`BT /F2 9.5 Tf 482 ${py(32)} Td (CRITICAL SLA) Tj ET`);
-  } else {
-    p1.push(`0.99 0.96 0.89 rg`); // light amber bg
-    p1.push(`470 ${py(36)} 85 20 re f`);
-    p1.push(`0.85 0.55 0.05 RG 1 w 470 ${py(36)} 85 20 re S`);
-    p1.push(`0.70 0.40 0.02 rg`);
-    p1.push(`BT /F2 9.5 Tf 488 ${py(32)} Td (AT RISK SLA) Tj ET`);
-  }
-
-  // Metric Profile Title Box
-  let y = 100;
-  p1.push(`0.06 0.09 0.16 rg`);
-  p1.push(`BT /F2 16 Tf 40 ${py(y)} Td (${escapePdf(metricName)}) Tj ET`);
-  y += 16;
-  p1.push(`0.39 0.45 0.55 rg`);
-  p1.push(`BT /F1 9.5 Tf 40 ${py(y)} Td (Domain Module: ${escapePdf(category)} | Governance Scope: Enterprise Cloud Tenant) Tj ET`);
-
-  // KPI Metrics Table Grid (Current, Benchmark, Variance Gap)
-  y += 18;
-  p1.push(`0.96 0.98 1.0 rg 40 ${py(y + 44)} 515.28 44 re f`);
-  p1.push(`0.85 0.90 0.95 RG 1 w 40 ${py(y + 44)} 515.28 44 re S`);
-
-  // Vertical dividers
-  p1.push(`211.76 ${py(y + 44)} m 211.76 ${py(y)} l S`);
-  p1.push(`383.52 ${py(y + 44)} m 383.52 ${py(y)} l S`);
-
-  // Column 1
-  p1.push(`0.39 0.45 0.55 rg`);
-  p1.push(`BT /F1 8 Tf 55 ${py(y + 16)} Td (CURRENT ACTUAL VALUE) Tj ET`);
-  p1.push(`0.05 0.10 0.20 rg`);
-  p1.push(`BT /F2 13 Tf 55 ${py(y + 34)} Td (${escapePdf(company)}) Tj ET`);
-
-  // Column 2
-  p1.push(`0.39 0.45 0.55 rg`);
-  p1.push(`BT /F1 8 Tf 226 ${py(y + 16)} Td (BENCHMARK TARGET) Tj ET`);
-  p1.push(`0.05 0.10 0.20 rg`);
-  p1.push(`BT /F2 13 Tf 226 ${py(y + 34)} Td (${escapePdf(standard)}) Tj ET`);
-
-  // Column 3
-  p1.push(`0.39 0.45 0.55 rg`);
-  p1.push(`BT /F1 8 Tf 398 ${py(y + 16)} Td (VARIANCE GAP // DEVIATION) Tj ET`);
-  if (isCritical) {
-    p1.push(`0.86 0.15 0.15 rg`);
-  } else {
-    p1.push(`0.85 0.50 0.05 rg`);
-  }
-  p1.push(`BT /F2 13 Tf 398 ${py(y + 34)} Td (${escapePdf(variance)}) Tj ET`);
-
-  y += 60;
-
-  // Section 1: Root Cause Analysis (Why is it happening?)
-  p1.push(`0.03 0.52 0.89 rg 40 ${py(y + 18)} 515.28 18 re f`);
-  p1.push(`1 1 1 rg`);
-  p1.push(`BT /F2 9.5 Tf 48 ${py(y + 13)} Td (01. ROOT CAUSE ANALYSIS & ARCHITECTURE BOTTLENECKS) Tj ET`);
-  y += 26;
-
-  const rootCause = detailedAnalysis.whyItHappens || 'Multi-tier operational and system validation bottlenecks.';
-  const whereArea = detailedAnalysis.whereItHappens ? `Specific Area: ${detailedAnalysis.whereItHappens}` : '';
-  
-  if (whereArea) {
-    p1.push(`0.15 0.20 0.30 rg`);
-    p1.push(`BT /F2 8.5 Tf 44 ${py(y)} Td (${escapePdf(whereArea)}) Tj ET`);
-    y += 14;
-  }
-
-  p1.push(`0.20 0.25 0.35 rg`);
-  const rcLines = wordWrap(rootCause, 95);
-  for (const line of rcLines) {
-    p1.push(`BT /F1 8.5 Tf 44 ${py(y)} Td (${escapePdf(line)}) Tj ET`);
-    y += 12;
-  }
-
-  y += 10;
-
-  // Section 2: Trend Analysis (Quarterly Progression)
-  p1.push(`0.03 0.52 0.89 rg 40 ${py(y + 18)} 515.28 18 re f`);
-  p1.push(`1 1 1 rg`);
-  p1.push(`BT /F2 9.5 Tf 48 ${py(y + 13)} Td (02. TREND ANALYSIS & HISTORICAL TRAJECTORY) Tj ET`);
-  y += 26;
-
-  const trendSummary = detailedAnalysis.trendAnalysis?.summary || 'Variance has tracked above SLA limits across recent cycles.';
-  p1.push(`0.20 0.25 0.35 rg`);
-  const tsLines = wordWrap(trendSummary, 95);
-  for (const line of tsLines) {
-    p1.push(`BT /F1 8.5 Tf 44 ${py(y)} Td (${escapePdf(line)}) Tj ET`);
-    y += 12;
-  }
-
-  // Trend points chip strip
-  if (detailedAnalysis.trendAnalysis?.points) {
-    y += 4;
-    let chipX = 44;
-    for (const pt of detailedAnalysis.trendAnalysis.points) {
-      p1.push(`0.93 0.95 0.98 rg ${chipX} ${py(y + 18)} 95 18 re f`);
-      p1.push(`0.80 0.85 0.92 RG 0.8 w ${chipX} ${py(y + 18)} 95 18 re S`);
-      p1.push(`0.30 0.35 0.45 rg`);
-      p1.push(`BT /F1 7.5 Tf ${chipX + 6} ${py(y + 13)} Td (${escapePdf(pt.period)}:) Tj ET`);
-      p1.push(`0.05 0.10 0.20 rg`);
-      p1.push(`BT /F2 8.5 Tf ${chipX + 50} ${py(y + 13)} Td (${escapePdf(pt.value)}) Tj ET`);
-      chipX += 105;
-    }
-    y += 24;
-  }
-
-  y += 10;
-
-  // Section 3: Downstream Business Impact
-  p1.push(`0.03 0.52 0.89 rg 40 ${py(y + 18)} 515.28 18 re f`);
-  p1.push(`1 1 1 rg`);
-  p1.push(`BT /F2 9.5 Tf 48 ${py(y + 13)} Td (03. BUSINESS, SLA & FINANCIAL RISK ASSESSMENT) Tj ET`);
-  y += 26;
-
-  const impact = detailedAnalysis.howItEffects || 'Creates compliance exposure, delayed processing timelines, and increased manual administrative burden.';
-  p1.push(`0.20 0.25 0.35 rg`);
-  const impLines = wordWrap(impact, 95);
-  for (const line of impLines) {
-    p1.push(`BT /F1 8.5 Tf 44 ${py(y)} Td (${escapePdf(line)}) Tj ET`);
-    y += 12;
-  }
-
-  // Page 1 Footer
-  p1.push(`0.85 0.88 0.92 RG 0.5 w 40 ${py(800)} m 555.28 ${py(800)} l S`);
-  p1.push(`0.50 0.55 0.65 rg`);
-  p1.push(`BT /F1 7.5 Tf 40 ${py(812)} Td (SAP SuccessFactors Health Monitor -- Document Ref: BRD-${escapePdf(category.toUpperCase().slice(0, 3))}-${Math.floor(1000 + Math.random() * 9000)}) Tj ET`);
-  p1.push(`BT /F1 7.5 Tf 500 ${py(812)} Td (Page 1 of 2) Tj ET`);
-
-  const stream1 = p1.join('\n');
-
-  // ---------------- Page 2 Stream (BRD Plan of Action & Manpower) ----------------
-  let p2 = [];
-
-  // Header banner on Page 2
-  p2.push(`0.043 0.102 0.176 rg`);
-  p2.push(`0 ${py(50)} 595.28 50 re f`);
-  p2.push(`1 1 1 rg`);
-  p2.push(`BT /F2 11 Tf 40 ${py(32)} Td (BRD PLAN OF ACTION & RESOURCE REQUIREMENTS: ${escapePdf(metricName)}) Tj ET`);
-  p2.push(`0.58 0.65 0.74 rg`);
-  p2.push(`BT /F1 8 Tf 460 ${py(32)} Td (Section 04 // Implementation Spec) Tj ET`);
-
-  let y2 = 70;
-
-  // Section 4 Header
-  p2.push(`0.03 0.52 0.89 rg 40 ${py(y2 + 20)} 515.28 20 re f`);
-  p2.push(`1 1 1 rg`);
-  p2.push(`BT /F2 10 Tf 48 ${py(y2 + 14)} Td (04. BUSINESS REQUIREMENTS DOCUMENT (BRD) -- IMPLEMENTATION PLAN OF ACTION) Tj ET`);
-  y2 += 28;
-
-  // Executive Resource Overview Box
-  p2.push(`0.97 0.98 1.0 rg 40 ${py(y2 + 48)} 515.28 48 re f`);
-  p2.push(`0.80 0.88 0.96 RG 1 w 40 ${py(y2 + 48)} 515.28 48 re S`);
-
-  p2.push(`0.30 0.40 0.55 rg`);
-  p2.push(`BT /F2 8 Tf 50 ${py(y2 + 14)} Td (TOTAL WORKFORCE ESTIMATE:) Tj ET`);
-  p2.push(`0.05 0.10 0.20 rg`);
-  p2.push(`BT /F2 9.5 Tf 190 ${py(y2 + 14)} Td (${escapePdf(brd.totalManpower)}) Tj ET`);
-
-  p2.push(`0.30 0.40 0.55 rg`);
-  p2.push(`BT /F2 8 Tf 50 ${py(y2 + 28)} Td (TARGET TIMELINE & CADENCE:) Tj ET`);
-  p2.push(`0.05 0.10 0.20 rg`);
-  p2.push(`BT /F2 9.5 Tf 190 ${py(y2 + 28)} Td (${escapePdf(brd.timeline)}) Tj ET`);
-
-  p2.push(`0.30 0.40 0.55 rg`);
-  p2.push(`BT /F2 8 Tf 50 ${py(y2 + 42)} Td (GOVERNANCE SPONSOR:) Tj ET`);
-  p2.push(`0.05 0.10 0.20 rg`);
-  p2.push(`BT /F1 8.5 Tf 190 ${py(y2 + 42)} Td (${escapePdf(brd.governanceLead)}) Tj ET`);
-
-  y2 += 58;
-
-  // Workforce Breakdown Table Header
-  p2.push(`0.12 0.18 0.28 rg 40 ${py(y2 + 18)} 515.28 18 re f`);
-  p2.push(`1 1 1 rg`);
-  p2.push(`BT /F2 8 Tf 46 ${py(y2 + 13)} Td (REQUIRED ROLE / SPECIALIZATION) Tj ET`);
-  p2.push(`BT /F2 8 Tf 270 ${py(y2 + 13)} Td (HEADCOUNT) Tj ET`);
-  p2.push(`BT /F2 8 Tf 330 ${py(y2 + 13)} Td (PERSON-HOURS) Tj ET`);
-  p2.push(`BT /F2 8 Tf 410 ${py(y2 + 13)} Td (PRIMARY WORKSTREAM FOCUS) Tj ET`);
-  y2 += 18;
-
-  // Workforce Breakdown Rows
-  for (let i = 0; i < brd.workforceRequired.length; i++) {
-    const wf = brd.workforceRequired[i];
-    const rowBg = i % 2 === 0 ? '0.98 0.99 1.0' : '1 1 1';
-    p2.push(`${rowBg} rg 40 ${py(y2 + 20)} 515.28 20 re f`);
-    p2.push(`0.88 0.90 0.94 RG 0.5 w 40 ${py(y2 + 20)} 515.28 20 re S`);
-
-    p2.push(`0.08 0.12 0.20 rg`);
-    p2.push(`BT /F2 8 Tf 46 ${py(y2 + 14)} Td (${escapePdf(wf.role)}) Tj ET`);
-    p2.push(`BT /F1 8 Tf 285 ${py(y2 + 14)} Td (${wf.count}) Tj ET`);
-    p2.push(`0.03 0.45 0.75 rg`);
-    p2.push(`BT /F2 8 Tf 330 ${py(y2 + 14)} Td (${escapePdf(wf.hours)}) Tj ET`);
-    p2.push(`0.25 0.30 0.40 rg`);
-    p2.push(`BT /F1 7.5 Tf 410 ${py(y2 + 14)} Td (${escapePdf(wf.focus.slice(0, 32))}) Tj ET`);
-    y2 += 20;
-  }
-
-  y2 += 12;
-
-  // Implementation Milestones
-  p2.push(`0.90 0.94 0.98 rg 40 ${py(y2 + 16)} 515.28 16 re f`);
-  p2.push(`0.15 0.25 0.40 rg`);
-  p2.push(`BT /F2 8.5 Tf 46 ${py(y2 + 12)} Td (IMPLEMENTATION PHASES & SPRINT DELIVERABLES) Tj ET`);
-  y2 += 20;
-
-  for (const ms of brd.milestones) {
-    p2.push(`0.03 0.52 0.89 rg`);
-    p2.push(`BT /F2 8 Tf 46 ${py(y2)} Td ([${escapePdf(ms.phase)}]) Tj ET`);
-    p2.push(`0.10 0.15 0.25 rg`);
-    p2.push(`BT /F2 8 Tf 135 ${py(y2)} Td (${escapePdf(ms.title)}:) Tj ET`);
-    p2.push(`0.30 0.35 0.45 rg`);
-    p2.push(`BT /F1 8 Tf 290 ${py(y2)} Td (Deliverable: ${escapePdf(ms.deliverable)}) Tj ET`);
-    y2 += 13;
-  }
-
-  y2 += 10;
-
-  // Prescriptive Tactical Action Steps
-  p2.push(`0.90 0.94 0.98 rg 40 ${py(y2 + 16)} 515.28 16 re f`);
-  p2.push(`0.15 0.25 0.40 rg`);
-  p2.push(`BT /F2 8.5 Tf 46 ${py(y2 + 12)} Td (PRESCRIPTIVE WORKSTREAM ACTION ITEMS) Tj ET`);
-  y2 += 20;
-
-  const actionSteps = brd.actionSteps || [];
-  for (let sIdx = 0; sIdx < actionSteps.length; sIdx++) {
-    const step = actionSteps[sIdx];
-    p2.push(`0.03 0.52 0.89 rg`);
-    p2.push(`BT /F2 8 Tf 46 ${py(y2)} Td (${sIdx + 1}.) Tj ET`);
-    p2.push(`0.20 0.25 0.35 rg`);
-    const stepLines = wordWrap(step, 90);
-    for (let lIdx = 0; lIdx < stepLines.length; lIdx++) {
-      const line = stepLines[lIdx];
-      const indent = lIdx === 0 ? 60 : 60;
-      p2.push(`BT /F1 8 Tf ${indent} ${py(y2)} Td (${escapePdf(line)}) Tj ET`);
-      y2 += 11;
-    }
-    y2 += 3;
-  }
-
-  y2 += 8;
-
-  // Expected ROI / Business Outcome Callout
-  p2.push(`0.93 0.98 0.95 rg 40 ${py(y2 + 28)} 515.28 28 re f`);
-  p2.push(`0.20 0.70 0.35 RG 1 w 40 ${py(y2 + 28)} 515.28 28 re S`);
-  p2.push(`0.05 0.45 0.20 rg`);
-  p2.push(`BT /F2 8 Tf 48 ${py(y2 + 12)} Td (EXPECTED BUSINESS OUTCOME & ROI:) Tj ET`);
-  p2.push(`0.10 0.25 0.15 rg`);
-  p2.push(`BT /F1 8 Tf 48 ${py(y2 + 22)} Td (${escapePdf(brd.expectedOutcome)}) Tj ET`);
-
-  y2 += 38;
-
-  // Enterprise Governance Sign-Off Block
-  p2.push(`0.97 0.98 1.0 rg 40 ${py(y2 + 50)} 515.28 50 re f`);
-  p2.push(`0.85 0.88 0.92 RG 1 w 40 ${py(y2 + 50)} 515.28 50 re S`);
-
-  // 3 signoff columns
-  p2.push(`BT /F2 7.5 Tf 50 ${py(y2 + 14)} Td (PREPARED BY:) Tj ET`);
-  p2.push(`BT /F1 7.5 Tf 50 ${py(y2 + 26)} Td (Lead SuccessFactors Architect) Tj ET`);
-  p2.push(`BT /F1 7 Tf 50 ${py(y2 + 38)} Td (Sign: _____________________) Tj ET`);
-
-  p2.push(`BT /F2 7.5 Tf 220 ${py(y2 + 14)} Td (REVIEWED BY:) Tj ET`);
-  p2.push(`BT /F1 7.5 Tf 220 ${py(y2 + 26)} Td (Director of HR Operations) Tj ET`);
-  p2.push(`BT /F1 7 Tf 220 ${py(y2 + 38)} Td (Sign: _____________________) Tj ET`);
-
-  p2.push(`BT /F2 7.5 Tf 390 ${py(y2 + 14)} Td (APPROVED BY:) Tj ET`);
-  p2.push(`BT /F1 7.5 Tf 390 ${py(y2 + 26)} Td (VP / Enterprise Project Sponsor) Tj ET`);
-  p2.push(`BT /F1 7 Tf 390 ${py(y2 + 38)} Td (Sign: _____________________) Tj ET`);
-
-  // Page 2 Footer
-  p2.push(`0.85 0.88 0.92 RG 0.5 w 40 ${py(800)} m 555.28 ${py(800)} l S`);
-  p2.push(`0.50 0.55 0.65 rg`);
-  p2.push(`BT /F1 7.5 Tf 40 ${py(812)} Td (SAP SuccessFactors Health Monitor -- BRD Action Plan Confidential) Tj ET`);
-  p2.push(`BT /F1 7.5 Tf 500 ${py(812)} Td (Page 2 of 2) Tj ET`);
-
-  const stream2 = p2.join('\n');
-
-  // ---------------- Assemble Compliant PDF 1.4 Binary ----------------
-  const objects = [];
-  
-  // Object 1: Catalog
-  objects.push(`1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj`);
-
-  // Object 2: Pages container (2 pages)
-  objects.push(`2 0 obj\n<< /Type /Pages /Kids [3 0 R 7 0 R] /Count 2 >>\nendobj`);
-
-  // Object 3: Page 1 definition
-  objects.push(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>\nendobj`);
-
-  // Object 4: Page 1 Content Stream
-  objects.push(`4 0 obj\n<< /Length ${stream1.length} >>\nstream\n${stream1}\nendstream\nendobj`);
-
-  // Object 5: Standard Regular Font (Helvetica)
-  objects.push(`5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj`);
-
-  // Object 6: Standard Bold Font (Helvetica-Bold)
-  objects.push(`6 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj`);
-
-  // Object 7: Page 2 definition
-  objects.push(`7 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 8 0 R >>\nendobj`);
-
-  // Object 8: Page 2 Content Stream
-  objects.push(`8 0 obj\n<< /Length ${stream2.length} >>\nstream\n${stream2}\nendstream\nendobj`);
-
-  // Build PDF document with exact byte offsets
-  let pdf = `%PDF-1.4\n%âãÏÓ\n`;
-  const offsets = [];
-
-  for (const obj of objects) {
-    offsets.push(pdf.length);
-    pdf += obj + '\n';
-  }
-
-  const xrefOffset = pdf.length;
-  pdf += `xref\n0 ${objects.length + 1}\n`;
-  pdf += `0000000000 65535 f \n`;
-  for (const offset of offsets) {
-    pdf += String(offset).padStart(10, '0') + ` 00000 n \n`;
-  }
-
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
-
-  // Trigger download as a clean .pdf blob file
-  const blob = new Blob([pdf], { type: 'application/pdf' });
+// Fallback to trigger direct file download as standalone HTML if PDF engine is blocked
+function triggerFileDownload(content, filename, mimeType = 'text/html') {
+  const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  const safeFilename = `${metricName.replace(/[^a-zA-Z0-9]/g, '_')}_BRD_Action_Plan.pdf`;
-  a.download = safeFilename;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
-
   setTimeout(() => {
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, 2000);
-
-  return safeFilename;
+  }, 400);
 }
+
+export async function generateMetricBrdPdf(metric, options = {}) {
+  const brdPlan = options.brdPlan || {};
+  const missingConfigs = options.missingConfigs || [];
+  const systemTouchpoints = options.systemTouchpoints || [];
+  const rcaFailureModes = options.rcaFailureModes || [];
+  const moduleName = options.moduleName || 'SAP SuccessFactors';
+
+  const { detailedAnalysis, metric: metricName, category, company, standard, status, variance } = metric || {};
+  const isCritical = status === 'Critical';
+
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+
+  const sanitizedFileName = (metricName || 'Metric')
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .replace(/_+/g, '_');
+
+  const pdfFilename = `BRD_Action_Plan_${sanitizedFileName}.pdf`;
+
+  const rcaPriorityLabels = [
+    'P1 • Critical Architecture Gap',
+    'P2 • Operational Workflow Latency',
+    'P3 • Integration & Sync Reliability'
+  ];
+
+  // Self-contained document styled identically to the on-screen BRD specification
+  const htmlTemplate = `
+    <div class="brd-doc-container" style="
+      width: 780px;
+      margin: 0 auto;
+      background: #ffffff;
+      color: #0f172a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-size: 11px;
+      line-height: 1.45;
+      padding: 24px 28px;
+      box-sizing: border-box;
+    ">
+      <style>
+        .brd-doc-container * { box-sizing: border-box; }
+        .doc-header { border-bottom: 2px solid #0b4d75; padding-bottom: 12px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .doc-meta-pre { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 700; margin-bottom: 3px; }
+        .doc-title { font-size: 19px; font-weight: 800; color: #0b3954; margin-bottom: 4px; }
+        .doc-meta-sub { font-size: 10.5px; color: #475569; }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+        .badge-critical { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .badge-at-risk { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .badge-healthy { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+
+        .kpi-strip { display: flex; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; gap: 12px; }
+        .kpi-cell { flex: 1; }
+        .kpi-cell-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 2px; }
+        .kpi-cell-value { font-size: 13.5px; font-weight: 800; color: #0f172a; }
+        .kpi-cell-value.critical { color: #dc2626; }
+        .kpi-cell-value.at-risk { color: #d97706; }
+        .kpi-divider { width: 1px; background: #e2e8f0; }
+
+        .diagnostic-card { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 14px; page-break-inside: avoid; break-inside: avoid; }
+        .diagnostic-card-header { padding: 9px 14px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .diagnostic-card-title { font-size: 12.5px; font-weight: 800; color: #0b3954; }
+        .diagnostic-card-subtitle { font-size: 9.5px; color: #64748b; margin-top: 1px; }
+        .approved-pill { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; font-size: 8.5px; font-weight: 700; padding: 2px 7px; border-radius: 9999px; text-transform: uppercase; }
+        .diagnostic-card-content { padding: 12px 14px; }
+
+        .analysis-text { font-size: 10.5px; color: #334155; line-height: 1.5; margin-bottom: 8px; }
+        .section-subheading { font-size: 11px; font-weight: 700; color: #0f172a; margin-top: 10px; margin-bottom: 6px; }
+
+        .footprint-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 5px; padding: 8px 10px; margin-top: 8px; }
+        .footprint-header { font-size: 9.5px; font-weight: 700; color: #475569; margin-bottom: 5px; }
+        .footprint-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+        .footprint-chip { font-size: 9px; font-weight: 600; padding: 2px 8px; border-radius: 4px; border: 1px solid #cbd5e1; background: #ffffff; color: #334155; }
+        .chip-core { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+        .chip-config { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+        .chip-workflow { background: #ede9fe; color: #6d28d9; border-color: #ddd6fe; }
+        .chip-integration { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+
+        .brd-spec-table-container { margin-top: 8px; border: 1px solid #cbd5e1; border-radius: 5px; overflow: hidden; page-break-inside: avoid; break-inside: avoid; }
+        .brd-spec-table { width: 100%; border-collapse: collapse; font-size: 10px; text-align: left; }
+        .brd-spec-table th { background-color: #0b4d75; color: #ffffff; font-weight: 700; padding: 7px 10px; font-size: 9.5px; border-bottom: 2px solid #083b5a; white-space: nowrap; }
+        .brd-spec-table td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; color: #1e293b; vertical-align: middle; line-height: 1.4; }
+        .brd-spec-table tr:last-child td { border-bottom: none; }
+        .brd-phase-header-row td { background-color: #e8eff6; color: #0b3954; font-weight: 700; font-size: 9.5px; padding: 7px 10px; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; }
+        .brd-spec-summary-row td { background-color: #f1f5f9; font-weight: 700; color: #0f172a; }
+
+        .workstream-id-badge { font-weight: 700; color: #0b4d75; font-size: 10px; }
+        .fixes-driver-badge { display: inline-block; font-weight: 600; color: #334155; font-size: 9px; background: #f1f5f9; padding: 1px 6px; border-radius: 3px; border: 1px solid #e2e8f0; }
+
+        .cfg-summary-banner { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 5px; padding: 8px 12px; margin-bottom: 8px; }
+        .cfg-banner-title { font-size: 10.5px; font-weight: 700; color: #92400e; }
+        .cfg-banner-desc { font-size: 9.5px; color: #78350f; }
+        .cfg-banner-stats { display: flex; gap: 6px; flex-shrink: 0; }
+        .cfg-stat-pill { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 9999px; white-space: nowrap; }
+        .pill-critical { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .pill-high { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+        .pill-medium { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+        .cfg-setting-code { display: inline-block; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 9px; background: #f8fafc; color: #0f172a; padding: 2px 6px; border-radius: 3px; border: 1px solid #e2e8f0; word-break: break-word; }
+
+        .trend-points-strip { display: flex; gap: 8px; margin-top: 6px; }
+        .trend-point-chip { flex: 1; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px 8px; text-align: center; }
+        .trend-period { font-size: 8.5px; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; }
+        .trend-value { font-size: 11px; font-weight: 800; color: #0f172a; }
+
+        .rca-drivers-split-grid { display: flex; gap: 10px; margin-bottom: 8px; }
+        .rca-drivers-split-grid > div { flex: 1; }
+        .rca-breakdown-grid { display: flex; gap: 8px; margin-top: 8px; }
+        .rca-mode-card { flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 5px; padding: 8px 10px; }
+        .rca-mode-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .rca-step-num { font-size: 9px; font-weight: 800; color: #0284c7; }
+        .rca-priority-tag { font-size: 8.5px; font-weight: 700; color: #475569; }
+        .rca-mode-title { font-size: 10px; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+        .rca-mode-desc { font-size: 9px; color: #475569; line-height: 1.4; }
+
+        .impact-triad-grid { display: flex; gap: 8px; margin-top: 8px; }
+        .impact-triad-card { flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 5px; padding: 8px 10px; }
+        .triad-title { font-size: 10px; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+        .triad-desc { font-size: 9px; color: #64748b; line-height: 1.35; }
+
+        .brd-target-outcome-banner { margin-top: 10px; padding: 8px 12px; background-color: #f0fdf4; border: 1px solid #86efac; border-radius: 5px; display: flex; align-items: center; gap: 10px; }
+        .brd-target-outcome-label { font-weight: 800; font-size: 9px; letter-spacing: 0.05em; color: #166534; white-space: nowrap; }
+        .brd-target-outcome-text { font-size: 10px; color: #14532d; font-weight: 600; }
+
+        .criteria-risks-split-grid { display: flex; gap: 12px; }
+        .criteria-risks-split-grid > div { flex: 1; }
+
+        .brd-spec-footnote { margin-top: 10px; padding-top: 8px; font-size: 8.5px; color: #64748b; font-style: italic; border-top: 1px dashed #cbd5e1; }
+        .doc-footer { border-top: 1px solid #cbd5e1; padding-top: 10px; margin-top: 16px; display: flex; justify-content: space-between; font-size: 9px; color: #94a3b8; }
+      </style>
+
+      <!-- Document Header -->
+      <header class="doc-header">
+        <div>
+          <div class="doc-meta-pre">SAP SuccessFactors Enterprise Diagnostic Intelligence • BRD Plan of Action</div>
+          <h1 class="doc-title">${metricName || 'Metric Diagnostic Report'}</h1>
+          <div class="doc-meta-sub">
+            Category: <strong>${category || 'HCM Core'}</strong> • Module: <strong>${moduleName}</strong> • Generated: <strong>${currentDate}</strong>
+          </div>
+        </div>
+        <div>
+          <span class="badge ${isCritical ? 'badge-critical' : status === 'Healthy' ? 'badge-healthy' : 'badge-at-risk'}">
+            ${status || 'At Risk'}
+          </span>
+        </div>
+      </header>
+
+      <!-- KPI Summary Strip -->
+      <div class="kpi-strip">
+        <div class="kpi-cell">
+          <div class="kpi-cell-label">Current Company Value</div>
+          <div class="kpi-cell-value ${isCritical ? 'critical' : 'at-risk'}">${company || 'N/A'}</div>
+        </div>
+        <div class="kpi-divider"></div>
+        <div class="kpi-cell">
+          <div class="kpi-cell-label">Benchmark Standard</div>
+          <div class="kpi-cell-value">${standard || 'N/A'}</div>
+        </div>
+        <div class="kpi-divider"></div>
+        <div class="kpi-cell">
+          <div class="kpi-cell-label">Variance Gap</div>
+          <div class="kpi-cell-value ${isCritical ? 'critical' : 'at-risk'}">${variance || 'N/A'}</div>
+        </div>
+        <div class="kpi-divider"></div>
+        <div class="kpi-cell">
+          <div class="kpi-cell-label">Remediation Timeline</div>
+          <div class="kpi-cell-value" style="color: #0b4d75; font-size: 12.5px;">${brdPlan.timelineAndEffort?.timeline || brdPlan.timeline || '3-4 Weeks'}</div>
+        </div>
+        <div class="kpi-divider"></div>
+        <div class="kpi-cell">
+          <div class="kpi-cell-label">Total Specialist Effort</div>
+          <div class="kpi-cell-value" style="color: #0b4d75; font-size: 12.5px;">${brdPlan.timelineAndEffort?.totalEffort || `${brdPlan.totalEffortHours || 100} Total Hours`}</div>
+        </div>
+      </div>
+
+      <!-- SECTION 01: DIAGNOSIS -->
+      <div class="diagnostic-card">
+        <div class="diagnostic-card-header">
+          <div>
+            <h2 class="diagnostic-card-title">1. Diagnosis</h2>
+            <div class="diagnostic-card-subtitle">Written by the LLM from the ML insights only</div>
+          </div>
+        </div>
+        <div class="diagnostic-card-content">
+          ${(options.diagnosisHeadline || detailedAnalysis.headline) ? `
+            <div style="margin-bottom: 12px; padding: 10px 14px; background: rgba(239, 68, 68, 0.08); border-left: 4px solid #ef4444; border-radius: 6px; font-weight: 600; font-size: 11.5px; color: #1e293b;">
+              🚨 ${options.diagnosisHeadline || detailedAnalysis.headline}
+            </div>
+          ` : ''}
+          ${(options.whyItHappensText || detailedAnalysis.whyItHappens) ? `
+            <div style="margin-bottom: 12px;">
+              <div style="font-weight: 700; color: #1e293b; margin-bottom: 4px;">🔍 Why It is Happening (Root Cause):</div>
+              <p class="analysis-text" style="margin-top: 0; line-height: 1.6;">${options.whyItHappensText || detailedAnalysis.whyItHappens}</p>
+            </div>
+          ` : ''}
+          ${(options.whereItHappensText && options.whereItHappensText !== 'SuccessFactors workflow touchpoints' && options.whereItHappensText !== options.whyItHappensText && !['data not yet fetched', 'data not yet fetched from supabase'].includes(options.whereItHappensText.toLowerCase())) ? `
+          <div class="footprint-box">
+            <div class="footprint-header">
+              <strong>Impacted Architecture Touchpoints:</strong> ${options.whereItHappensText}
+            </div>
+          </div>
+          ` : ''}
+          ${((options.howToOvercomeList && options.howToOvercomeList.length > 0) || (detailedAnalysis.howToOvercome && detailedAnalysis.howToOvercome.length > 0)) ? `
+            <div class="footprint-box" style="margin-top: 12px;">
+              <div class="footprint-header" style="margin-bottom: 6px;">
+                <strong>💡 Suggestions to Improve:</strong>
+              </div>
+              <ol style="margin: 0; padding-left: 20px; color: #334155; line-height: 1.5; font-size: 11px;">
+                ${(options.howToOvercomeList || detailedAnalysis.howToOvercome).map(sug => `
+                  <li style="margin-bottom: 4px;">${sug}</li>
+                `).join('')}
+              </ol>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+
+      <!-- SECTION 02: TREND ANALYSIS -->
+      <div class="diagnostic-card">
+        <div class="diagnostic-card-header">
+          <div>
+            <h2 class="diagnostic-card-title">2. Trend Analysis</h2>
+            <div class="diagnostic-card-subtitle">Hierarchical Drill-Down Trajectory Tracking (Yearly › Quarterly › Monthly)</div>
+          </div>
+        </div>
+        <div class="diagnostic-card-content">
+          <p class="analysis-text">${detailedAnalysis.trendAnalysis?.summary || 'Historical progression analysis tracks deteriorating SLA performance over recent reporting cycles.'}</p>
+          ${detailedAnalysis.trendAnalysis?.points && detailedAnalysis.trendAnalysis.points.length > 0 ? `
+            <div class="trend-points-strip">
+              ${detailedAnalysis.trendAnalysis.points.map(pt => `
+                <div class="trend-point-chip">
+                  <span class="trend-period">${pt.period}</span>
+                  <span class="trend-value">${pt.value}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+
+      <!-- SECTION 03: DATA GAPS -->
+      ${missingConfigs && missingConfigs.length > 0 ? `
+      <div class="diagnostic-card">
+        <div class="diagnostic-card-header">
+          <div>
+            <h2 class="diagnostic-card-title">3. Data Gaps</h2>
+            <div class="diagnostic-card-subtitle">System Configuration Gaps, Unpopulated Fields & Governance Controls</div>
+          </div>
+        </div>
+        <div class="diagnostic-card-content">
+          <div class="cfg-summary-banner">
+            <div>
+              <div class="cfg-banner-title">⚠️ ${missingConfigs.length} Identified Data Gaps</div>
+              <div class="cfg-banner-desc">Technical audit diagnosed the following unpopulated fields, missing attributes, and configuration deficits directly driving the variance gap.</div>
+            </div>
+            <div class="cfg-banner-stats">
+              <span class="cfg-stat-pill pill-critical">${missingConfigs.filter(c => c.severity === 'Critical').length} Critical</span>
+              <span class="cfg-stat-pill pill-high">${missingConfigs.filter(c => c.severity === 'High').length} High</span>
+              <span class="cfg-stat-pill pill-medium">${missingConfigs.filter(c => c.severity === 'Medium').length} Medium</span>
+            </div>
+          </div>
+
+          <div class="brd-spec-table-container">
+            <table class="brd-spec-table">
+              <thead>
+                <tr>
+                  <th style="width: 8%;">ID</th>
+                  <th style="width: 24%;">Configuration Component</th>
+                  <th style="width: 30%;">Data Gap / Unpopulated Field</th>
+                  <th style="width: 12%;">Severity</th>
+                  <th style="width: 26%;">Recommended Target Configuration</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${missingConfigs.map(c => `
+                  <tr>
+                    <td><span class="workstream-id-badge">${c.id}</span></td>
+                    <td><strong>${c.component}</strong></td>
+                    <td>
+                      <div style="font-weight: 600; color: #0f172a;">${c.title}</div>
+                      <div style="font-size: 8.5px; color: #64748b; margin-top: 1px;">Current Status: <span style="color: #b91c1c; font-weight: 600;">${c.status}</span></div>
+                    </td>
+                    <td>
+                      <span class="badge ${c.severity === 'Critical' ? 'badge-critical' : c.severity === 'High' ? 'badge-at-risk' : 'badge-healthy'}">
+                        ${c.severity}
+                      </span>
+                    </td>
+                    <td><code class="cfg-setting-code">${c.setting}</code></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      ` : ''}
+
+      <!-- SECTION 04: ROOT CAUSE ANALYSIS -->
+      <div class="diagnostic-card">
+        <div class="diagnostic-card-header">
+          <div>
+            <h2 class="diagnostic-card-title">4. Root Cause Analysis</h2>
+            <div class="diagnostic-card-subtitle">${brdPlan?.stageDrivers ? 'What is causing the breach, rendered from the ML insight JSON' : 'Deep Failure Modes & Systemic Diagnostic Trace'}</div>
+          </div>
+        </div>
+        <div class="diagnostic-card-content">
+          ${brdPlan?.stageDrivers ? `
+            <div class="rca-drivers-split-grid">
+              <div class="brd-spec-table-container">
+                <table class="brd-spec-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 45%;">Stage driver</th>
+                      <th style="width: 25%;">Avg days</th>
+                      <th style="width: 20%;">Share of breach</th>
+                      <th style="width: 10%;">ID</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${brdPlan.stageDrivers.map(sd => `
+                      <tr>
+                        <td><strong>${sd.driver}</strong></td>
+                        <td>${sd.avgDays}</td>
+                        <td>${sd.share}</td>
+                        <td><span class="workstream-id-badge">${sd.id}</span></td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+
+              ${brdPlan?.segmentDrivers ? `
+                <div class="brd-spec-table-container">
+                  <table class="brd-spec-table">
+                    <thead>
+                      <tr>
+                        <th style="width: 45%;">Segment driver</th>
+                        <th style="width: 25%;">Avg days</th>
+                        <th style="width: 20%;">Vs company average</th>
+                        <th style="width: 10%;">ID</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${brdPlan.segmentDrivers.map(seg => `
+                        <tr>
+                          <td><strong>${seg.driver}</strong></td>
+                          <td>${seg.avgDays}</td>
+                          <td>${seg.vsCompany}</td>
+                          <td><span class="workstream-id-badge">${seg.id}</span></td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              ` : ''}
+            </div>
+          ` : ''}
+
+          ${rcaFailureModes && rcaFailureModes.length > 0 ? `
+            <div class="rca-breakdown-grid">
+              ${rcaFailureModes.map((item, rIdx) => `
+                <div class="rca-mode-card">
+                  <div class="rca-mode-header">
+                    <span class="rca-step-num">0${rIdx + 1}</span>
+                    <span class="rca-priority-tag">${rcaPriorityLabels[rIdx] || item.category}</span>
+                  </div>
+                  <div class="rca-mode-title">${item.title}</div>
+                  <div class="rca-mode-desc">${item.detail}</div>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+
+      <!-- SECTION 05: BUSINESS IMPACT -->
+      <div class="diagnostic-card">
+        <div class="diagnostic-card-header">
+          <div>
+            <h2 class="diagnostic-card-title">5. Business & Operational Impact</h2>
+            <div class="diagnostic-card-subtitle">Downstream Process, Cost Overrun & Compliance Exposure</div>
+          </div>
+        </div>
+        <div class="diagnostic-card-content">
+          <p class="analysis-text">${detailedAnalysis.howItEffects || ''}</p>
+          <div class="impact-triad-grid">
+            <div class="impact-triad-card">
+              <div class="triad-title">💰 Financial Exposure</div>
+              <div class="triad-desc">Off-cycle adjustments, replacement recruiting fees & lost productivity overhead</div>
+            </div>
+            <div class="impact-triad-card">
+              <div class="triad-title">⏱️ SLA & Turnaround</div>
+              <div class="triad-desc">Process stagnation, managerial escalation queues & extended cycle delays</div>
+            </div>
+            <div class="impact-triad-card">
+              <div class="triad-title">🛡️ Governance & Audit</div>
+              <div class="triad-desc">Downstream integration exceptions, compliance findings & security exposure</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 06: BRD PLAN OF ACTION -->
+      ${brdPlan ? `
+      <div class="diagnostic-card">
+        <div class="diagnostic-card-header">
+          <div>
+            <h2 class="diagnostic-card-title">
+              6. BRD Plan of Action
+              <span class="approved-pill">Approved Spec</span>
+            </h2>
+            <div class="diagnostic-card-subtitle">Resource allocation, specialist hours and sprint timeline</div>
+          </div>
+        </div>
+        <div class="diagnostic-card-content">
+          <div class="brd-spec-table-container">
+            <table class="brd-spec-table">
+              <thead>
+                <tr>
+                  <th style="width: 56%;">Specialist manpower required</th>
+                  <th style="width: 22%;">Headcount</th>
+                  <th style="width: 22%;">Effort</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(brdPlan.specialistManpower || []).map(sp => `
+                  <tr>
+                    <td><strong>${sp.role}</strong></td>
+                    <td>${sp.headcount}</td>
+                    <td>${sp.effort}</td>
+                  </tr>
+                `).join('')}
+                <tr class="brd-spec-summary-row">
+                  <td><strong>Timeline & total effort</strong></td>
+                  <td><strong>${brdPlan.timelineAndEffort?.timeline || brdPlan.timeline || '3-4 Weeks'}</strong></td>
+                  <td><strong>${brdPlan.timelineAndEffort?.totalEffort || `${brdPlan.totalEffortHours} Total Hours`}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          ${brdPlan.phasedActivities && brdPlan.phasedActivities.length > 0 ? `
+            <div class="brd-spec-table-container" style="margin-top: 12px;">
+              <table class="brd-spec-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40%;">Phase / Activity</th>
+                    <th style="width: 38%;">Owner</th>
+                    <th style="width: 11%;">Workstream</th>
+                    <th style="width: 11%;">Effort</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${brdPlan.phasedActivities.map(phase => `
+                    <tr class="brd-phase-header-row">
+                      <td colspan="4">
+                        <strong>${phase.phaseName}</strong>
+                        ${phase.milestone ? ` | Milestone: ${phase.milestone}` : ''}
+                        ${phase.deliverable ? ` | Deliverable: ${phase.deliverable}` : ''}
+                      </td>
+                    </tr>
+                    ${(phase.activities || []).map(act => `
+                      <tr>
+                        <td>${act.activity}</td>
+                        <td style="color: #334155;">${act.owner}</td>
+                        <td>
+                          ${act.workstream && act.workstream !== '-' ? `<span class="workstream-id-badge">${act.workstream}</span>` : `<span style="color: #94a3b8;">-</span>`}
+                        </td>
+                        <td style="white-space: nowrap;">${act.effort}</td>
+                      </tr>
+                    `).join('')}
+                  `).join('')}
+                  <tr class="brd-spec-summary-row">
+                    <td colspan="3"><strong>Total Efforts</strong></td>
+                    <td style="white-space: nowrap;"><strong>${brdPlan.totalEffortsDisplay || `${brdPlan.totalEffortHours} Hours`}</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+      ` : ''}
+
+      <!-- SECTION 07: HOW TO OVERCOME - EXECUTION WORKSTREAMS -->
+      ${brdPlan ? `
+      <div class="diagnostic-card">
+        <div class="diagnostic-card-header">
+          <div>
+            <h2 class="diagnostic-card-title">7. How to Overcome - Execution Workstreams</h2>
+            <div class="diagnostic-card-subtitle">Prescriptive remediation steps, each traced to the root-cause drivers it fixes</div>
+          </div>
+        </div>
+        <div class="diagnostic-card-content">
+          ${brdPlan.executionWorkstreams && brdPlan.executionWorkstreams.length > 0 ? `
+            <div class="brd-spec-table-container">
+              <table class="brd-spec-table">
+                <thead>
+                  <tr>
+                    <th style="width: 8%;">ID</th>
+                    <th style="width: 74%;">Remediation step</th>
+                    <th style="width: 18%;">Fixes drivers</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${brdPlan.executionWorkstreams.map(ws => `
+                    <tr>
+                      <td><strong class="workstream-id-badge">${ws.id}</strong></td>
+                      <td>${ws.remediationStep}</td>
+                      <td><span class="fixes-driver-badge">${ws.fixesDrivers}</span></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          ` : ''}
+
+          ${brdPlan.targetOutcome ? `
+            <div class="brd-target-outcome-banner">
+              <span class="brd-target-outcome-label">TARGET OUTCOME</span>
+              <span class="brd-target-outcome-text">${brdPlan.targetOutcome}</span>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+      ` : ''}
+
+      <!-- SECTION 08: SUCCESS CRITERIA, ASSUMPTIONS & RISKS -->
+      ${brdPlan ? `
+      <div class="diagnostic-card">
+        <div class="diagnostic-card-header">
+          <div>
+            <h2 class="diagnostic-card-title">8. Success Criteria, Assumptions & Risks</h2>
+            <div class="diagnostic-card-subtitle">Measurable verification targets, implementation dependencies, and risk mitigations</div>
+          </div>
+        </div>
+        <div class="diagnostic-card-content">
+          <div class="criteria-risks-split-grid">
+            <!-- Success Criteria & Monitoring (WITHOUT "Verified by") -->
+            ${brdPlan.successCriteria && brdPlan.successCriteria.length > 0 ? `
+              <div>
+                <div class="section-subheading" style="margin-top: 0;">Success Criteria & Monitoring</div>
+                <div class="brd-spec-table-container">
+                  <table class="brd-spec-table">
+                    <thead>
+                      <tr>
+                        <th style="width: 35%;">Criterion</th>
+                        <th style="width: 65%;">Target</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${brdPlan.successCriteria.map(sc => `
+                        <tr>
+                          <td><strong>${sc.criterion}</strong></td>
+                          <td>${sc.target}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Assumptions & Risks -->
+            ${brdPlan.assumptionsAndRisks && brdPlan.assumptionsAndRisks.length > 0 ? `
+              <div>
+                <div class="section-subheading" style="margin-top: 0;">Assumptions & Risks</div>
+                <div class="brd-spec-table-container">
+                  <table class="brd-spec-table">
+                    <thead>
+                      <tr>
+                        <th style="width: 20%;">Type</th>
+                        <th style="width: 45%;">Description</th>
+                        <th style="width: 35%;">Mitigation</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${brdPlan.assumptionsAndRisks.map(ar => `
+                        <tr>
+                          <td>
+                            <span class="badge ${ar.type === 'Risk' ? 'badge-at-risk' : 'badge-healthy'}">
+                              ${ar.type}
+                            </span>
+                          </td>
+                          <td>${ar.description}</td>
+                          <td>${ar.mitigation}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Footnote -->
+          <div class="brd-spec-footnote">
+            ${brdPlan.footnote
+        ? brdPlan.footnote.replace('Sections 1, 3 and 4', 'Sections 1, 2, 3 and 4').replace('Sections 2 and 5-9', 'Sections 5–8')
+        : 'Sections 1, 2, 3 and 4 are rendered directly from telemetry, trend analysis, and configuration audit scans. Sections 5–8 are generated under the system prompt; effort and staffing are indicative estimates.'}
+          </div>
+        </div>
+      </div>
+      ` : ''}
+
+      <!-- Document Footer -->
+      <footer class="doc-footer">
+        <span>CONFIDENTIAL • FOR INTERNAL ENTERPRISE REMEDIATION ONLY</span>
+        <span>Powered by SAP SuccessFactors Enterprise Health Engine</span>
+      </footer>
+    </div>
+  `;
+
+  // Create temporary rendering container attached to DOM
+  // Must be position: absolute at (0, 0) so html2canvas computes valid bounding coordinates
+  const renderContainer = document.createElement('div');
+  renderContainer.id = 'brd-pdf-render-container';
+  renderContainer.style.position = 'absolute';
+  renderContainer.style.left = '0';
+  renderContainer.style.top = '0';
+  renderContainer.style.width = '780px';
+  renderContainer.style.background = '#ffffff';
+  renderContainer.style.zIndex = '-99999';
+  renderContainer.style.pointerEvents = 'none';
+  renderContainer.style.opacity = '1';
+  renderContainer.style.visibility = 'visible';
+  renderContainer.innerHTML = htmlTemplate;
+
+  // Temporarily preserve user's scroll position and align to (0, 0) for pristine canvas capture
+  const savedScrollY = window.scrollY || window.pageYOffset || 0;
+  const savedScrollX = window.scrollX || window.pageXOffset || 0;
+
+  window.scrollTo(0, 0);
+  document.body.appendChild(renderContainer);
+
+  // Allow browser layout engine 200ms to compute element geometry and font metrics
+  await new Promise(resolve => setTimeout(resolve, 200));
+
+  try {
+    const html2pdf = await loadHtml2Pdf();
+
+    const pdfOptions = {
+      margin: [10, 8, 10, 8], // top, left, bottom, right in mm
+      filename: pdfFilename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        x: 0,
+        y: 0,
+        width: 780,
+        windowWidth: 780
+      },
+      jsPDF: {
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait'
+      },
+      pagebreak: {
+        mode: ['css', 'legacy']
+      }
+    };
+
+    // Generate and directly trigger file download in browser
+    await html2pdf().set(pdfOptions).from(renderContainer).save();
+  } catch (err) {
+    console.warn('Direct PDF conversion error, executing fallback file download:', err);
+    // Reliable fallback: directly download as complete standalone HTML file
+    triggerFileDownload(
+      `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${pdfFilename}</title></head><body>${htmlTemplate}</body></html>`,
+      `BRD_Action_Plan_${sanitizedFileName}.html`,
+      'text/html'
+    );
+  } finally {
+    window.scrollTo(savedScrollX, savedScrollY);
+    if (document.body.contains(renderContainer)) {
+      document.body.removeChild(renderContainer);
+    }
+  }
+}
+
+export default generateMetricBrdPdf;

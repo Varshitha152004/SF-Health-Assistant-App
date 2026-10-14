@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 *.env
 *.env.*
+*.BACKENDD_FASTAPI_ARCHITECTURE_GUIDE.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class

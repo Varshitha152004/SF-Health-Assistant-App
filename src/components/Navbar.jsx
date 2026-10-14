@@ -1,6 +1,13 @@
 import React from 'react';
 
-export default function Navbar({ onGoHome, onOpenConnectSystem, isConnected }) {
+export default function Navbar({
+  onGoHome,
+  onOpenConnectSystem,
+  isConnected,
+  backendStatus = {},
+  onTriggerRefresh,
+  isRefreshing = false
+}) {
   return (
     <header className="dark-navbar">
       <div className="dark-navbar-inner">
@@ -16,17 +23,35 @@ export default function Navbar({ onGoHome, onOpenConnectSystem, isConnected }) {
           </div>
         </div>
 
-        {/* Right: Connect System Option */}
+        {/* Right: Actions */}
         <div className="navbar-right">
-          {isConnected && (
-            <div
-              className="navbar-telemetry-pill"
-              title="Live Telemetry: Connected to SAP SuccessFactors via OData v2 API"
+
+
+          {/* Single Optimized Refresh Button: Triggers ML Model -> LLM -> Backend -> UI */}
+          <button
+            type="button"
+            className={`btn-pipeline-refresh ${isRefreshing ? 'is-running' : ''}`}
+            onClick={onTriggerRefresh}
+            disabled={isRefreshing}
+            title="Run Analytics & TreeSHAP ML Model, synthesize GenAI insights, and refresh dashboard"
+          >
+            <svg 
+              className={`pipeline-sync-icon ${isRefreshing ? 'spin-anim' : ''}`}
+              width="13" 
+              height="13" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2.4" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
             >
-              <span className="status-pulse-dot dot-online"></span>
-              <span className="telemetry-label">LIVE</span>
-            </div>
-          )}
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+          </button>
 
           <button
             className={`btn-connect-system ${isConnected ? 'is-connected' : ''}`}
