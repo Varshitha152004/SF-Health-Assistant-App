@@ -1,6 +1,9 @@
 import sys
 from pathlib import Path
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 # Set up path to backend folder
 backend_dir = Path(__file__).resolve().parent / "backend"
 if str(backend_dir) not in sys.path:
